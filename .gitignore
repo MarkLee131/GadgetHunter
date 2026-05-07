@@ -1,0 +1,17 @@
+# Local artefacts (kept on disk for the user to package separately)
+.venv/
+
+# results/ tree
+results/**
+
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+.idea/
+.vscode/
+*.iml
+*.egg-info/
+.pytest_cache/
+
+.DS_Store
