@@ -1,10 +1,25 @@
 # Raw per-chain traces and local run outputs, distributed separately.
-results/**
+/results/**
+multi-agents/results/
 results_ablation_Buglens/**
 *.tar.gz
 
 taint-configs/
-analysis_scripts/
+
+# analysis_scripts/: only the figure bundle is published. Git cannot re-include a
+# file whose parent directory is excluded, so each level is re-admitted in turn
+# and the ordering of these lines matters.
+analysis_scripts/*
+!analysis_scripts/ablation_study/
+analysis_scripts/ablation_study/*
+!analysis_scripts/ablation_study/comparison_fig/
+analysis_scripts/ablation_study/comparison_fig/*
+!analysis_scripts/ablation_study/comparison_fig/plot_comparison.py
+!analysis_scripts/ablation_study/comparison_fig/ablation.csv
+!analysis_scripts/ablation_study/comparison_fig/RQ1_FP_FN.csv
+!analysis_scripts/ablation_study/comparison_fig/ablation_comparison.pdf
+!analysis_scripts/ablation_study/comparison_fig/RQ1_FP_FN.pdf
+!analysis_scripts/README.md
 
 # Local environment
 .venv/

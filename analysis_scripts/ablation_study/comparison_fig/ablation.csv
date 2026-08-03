@@ -1,0 +1,4 @@
+Metrics,SA_LLMD,SA,SA_SemReach,SA_LLMC,GadgetHunter
+FPR,88.44%,91.13%,82.29%,16.67%,38.95%
+FNR,11.76%,23.53%,26.47%,44.12%,26.47%
+New GCs,180,206,198,6,197

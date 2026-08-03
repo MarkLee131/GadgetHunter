@@ -16,11 +16,12 @@ Construction.* 34th USENIX Security Symposium, 2025), whose analysis backend is 
 and Yue Li. *Tai-e: A developer-friendly static analysis framework for Java by harnessing the good
 designs of classics.* ISSTA 2023). Its entry point is `pascal.taie.Main`.
 
-Our modification is confined to how candidate gadget chains are emitted. As described in §4 of the
-accompanying paper, we changed Flash so that every edge of an emitted chain additionally carries the
-JVM-level information the LLM stage consumes: the call instruction kind (`STATIC`, `SPECIAL`,
-`VIRTUAL`, `INTERFACE`, `DYNAMIC`), the call-site line number, and the taint annotations for the
-receiver and parameters. We did not modify the analysis algorithms of Tai-e or Soot.
+Our modification was made in **August 2025** and is confined to how candidate gadget chains are
+emitted. As described in §4 of the accompanying paper, we changed Flash so that every edge of an
+emitted chain additionally carries the JVM-level information the LLM stage consumes: the call
+instruction kind (`STATIC`, `SPECIAL`, `VIRTUAL`, `INTERFACE`, `DYNAMIC`), the call-site line number,
+and the taint annotations for the receiver and parameters. We did not modify the analysis algorithms
+of Tai-e or Soot.
 
 ## Copyleft components
 
@@ -36,12 +37,20 @@ authoritative text is the one published by that project.
 | Jasmin | `ca.mcgill.sable:jasmin:3.0.3` | LGPL-2.1 | <https://github.com/Sable/jasmin> |
 | Polyglot | `polyglot.*` (bundled by Soot) | LGPL-2.1 | <https://www.cs.cornell.edu/projects/polyglot/> |
 
-The full text of the GNU General Public License v3.0 and the GNU Lesser General Public License v3.0
-is carried inside the jar itself, at `COPYING` and `COPYING.LESSER`. Extract them with:
+The full text of each license above is in [`licenses/`](licenses/):
+
+| File | License |
+| --- | --- |
+| [`licenses/LGPL-3.0.txt`](licenses/LGPL-3.0.txt) | GNU Lesser General Public License v3.0 (applies to Tai-e) |
+| [`licenses/GPL-3.0.txt`](licenses/GPL-3.0.txt) | GNU General Public License v3.0, which LGPL-3.0 incorporates by reference |
+| [`licenses/LGPL-2.1.txt`](licenses/LGPL-2.1.txt) | GNU Lesser General Public License v2.1 (applies to Soot, Heros, Jasmin, Polyglot) |
+
+`licenses/LGPL-3.0.txt` and `licenses/GPL-3.0.txt` are byte-for-byte the `COPYING.LESSER` and
+`COPYING` entries carried inside the jar; verify with:
 
 ```bash
-unzip -p multi-agents/flash/flash.jar COPYING
-unzip -p multi-agents/flash/flash.jar COPYING.LESSER
+unzip -p multi-agents/flash/flash.jar COPYING        | diff - licenses/GPL-3.0.txt
+unzip -p multi-agents/flash/flash.jar COPYING.LESSER | diff - licenses/LGPL-3.0.txt
 ```
 
 The jar also carries the notices of two other bundled projects:
@@ -120,12 +129,19 @@ unzip -l multi-agents/flash/flash.jar | awk '{print $4}' | grep '\.class$' \
   | awk -F/ '{print $1}' | sort -u
 ```
 
-## Corresponding source
+## Written offer for corresponding source
 
-The LGPL requires that recipients be able to obtain the source of the covered library and of
-modifications to it. Tai-e and Soot are published at the upstream URLs above. The source of our
-modification to Flash's chain emission is not yet published in this repository; if you need it,
-please open an issue and we will make it available.
+The LGPL requires that recipients be able to obtain the source of the covered library, including any
+modifications to it. The unmodified upstream sources are published at the URLs in the table above.
+
+For the components covered by the LGPL that are distributed in object form inside
+`multi-agents/flash/flash.jar`, **and for our modification to Flash's chain emission described
+above, we hereby offer, to any third party in possession of this jar, the complete corresponding
+machine-readable source code, for a charge no more than our cost of physically performing the
+distribution. This offer is valid for three years from the date on which this repository last
+distributed the jar.** To take us up on it, open an issue at
+<https://github.com/MarkLee131/GadgetHunter/issues> or write to the corresponding author at the
+address given in the paper.
 
 ## Benchmarks referenced by this artifact
 

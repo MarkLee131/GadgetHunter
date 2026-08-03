@@ -111,14 +111,18 @@ gleipner_results/              # Gleipner synthetic benchmark, Table 5
   scripts/                     # Runner glue
   analysis.md                  # Notes on the configuration trade-offs
 
+analysis_scripts/              # Figure data and the script that renders it
+  ablation_study/comparison_fig/
+                               # Figures 5 and 6, their input CSVs, and plot_comparison.py
+
 paper/                         # Camera-ready PDF
 assets/                        # Figures used in this README
+licenses/                      # Full text of the licenses referenced by THIRD-PARTY-NOTICES.md
 THIRD-PARTY-NOTICES.md         # Licenses of the components bundled in flash.jar
 ```
 
-The per-chain traces for the 22 ysoserial applications (~1.4 GB of LLM I/O and generated Z3
-scripts) and the aggregation scripts are not in this repository yet. They are being finalized and
-will be added together with the per-project verdict CSVs.
+The per-chain traces for the 22 ysoserial applications (~1.4 GB of LLM I/O and generated Z3 scripts)
+are distributed separately rather than through this repository.
 
 ## Install
 
@@ -133,11 +137,13 @@ pip install -r requirements.txt
 
 | Variable | Purpose |
 | --- | --- |
-| `OPENAI_API_KEY` | API key for the LLM backend |
-| `GADGETHUNTER_JAVA_HOME` | JDK used for the analysed targets |
-| `GADGETHUNTER_JDK_DIR` | Optional JDK source tree, used to resolve JDK class sources |
+| `OPENAI_API_KEY` | API key for the LLM backend. Required; the default `llm_type` is `gpt` |
+| `GADGETHUNTER_JDK_DIR` | Optional JDK source tree (parent of `jdk8u/jdk/src/share/classes`), used to resolve JDK class sources during context retrieval. JDK lookups are skipped when unset |
 | `EXTRACT_JAVADOC` | Set to `0` to skip Javadoc extraction during context retrieval |
 | `DEBUG` | Set to `1` for verbose logging |
+
+`DEEPSEEK_API_KEY` and `ANTHROPIC_API_KEY` are read as well, for `llm_type` `deepseek` and `claude`.
+The paper's runs used `gpt`.
 
 ### Settings used in the paper
 
@@ -147,42 +153,75 @@ Xeon Gold 6248 @ 2.50 GHz with 188 GB RAM under Ubuntu 22.04.
 
 ## Quick start
 
-Run all three stages on a single chain:
+Phase A and Phase B are separate programs. Run Stage 1 first (see the Stage-1 section above) to
+obtain a chains file, then hand that file to Phase B; `main.py` and `test_single_chain.py` do not
+invoke `flash.jar` themselves.
+
+Stages 2 and 3 on one chain from that file:
 
 ```bash
 cd multi-agents
-python test_single_chain.py
+python test_single_chain.py \
+  --chains-file /path/to/stage1-chains \
+  --project-root /path/to/target-project \
+  --chain-index 0
 ```
 
-Batch analysis over a project's candidate chains:
+Stages 2 and 3 over a whole chains file:
 
 ```bash
 cd multi-agents
 python main.py \
   --project-root /path/to/target-project \
-  --chains-file /path/to/stage1-chains.txt \
+  --chains-file /path/to/stage1-chains \
   --batch --max-chains 200
 ```
 
-Outputs land under `multi-agents/results/<TIMESTAMP>_<Project>/`.
+`--chains-file` is required by both. Outputs land under
+`multi-agents/results/<TIMESTAMP>_<Project>/`.
 
 ## Output schema
 
-Each analysed chain produces `<run-dir>/chainN/analysis_results/analysis_result_chainN.json`:
+Each analysed chain produces `<run-dir>/chainN/analysis_results/analysis_result_chainN.json`. The
+shape depends on whether the chain survived Stage 2. A chain that reached Stage 3:
 
 ```json
 {
-  "chain_id": 3,
+  "chain_id": 6,
   "original_chain": ["[INTERFACE] <...> --(line:.., constraint:[..])--> <...>", "..."],
-  "region_analysis":      { "regions": [], "parsed_gadgets": [] },
-  "semantic_analysis":    { "reachable": true, "code_summaries": [] },
+  "region_analysis":  { "chain_id": 6, "original_chain": [], "parsed_gadgets": [],
+                        "regions": [], "transitions": [], "analysis_metadata": {} },
+  "semantic_analysis": { "early_stopping_used": true, "reachability_validated": true },
   "feasibility_analysis": {
-    "z3_solver_status": "sat | unsat | unknown",
-    "model_assignments": {},
-    "execution_time": 2.34,
-    "fix_attempts": 1
+    "solver_status": "sat",
+    "is_feasible": true,
+    "constraint_count": 0,
+    "execution_time": 0.1478,
+    "z3_model": "Model: [table = Obj!val!2, ...]",
+    "constraints": [],
+    "json_constraints": {},
+    "error_message": null
   },
-  "conclusion": { "verdict": "FEASIBLE" }
+  "conclusion": { "verdict": "FEASIBLE", "reasoning": "SAT(Φ(π)) holds — ...",
+                  "semantic_reachable": true, "semantic_score": "All region edges validated",
+                  "feasible": true, "solver_status": "sat", "constraint_count": 0 },
+  "analysis_time": 44.9,
+  "error": null
+}
+```
+
+`json_constraints` is the ⟨Vars, Flow, Guard, Runtime⟩ four-tuple of §3.5.1, exposed for audit.
+`solver_status` takes `sat`, `unsat`, `unknown`, or `error`.
+
+A chain pruned by Stage-2 early stopping instead carries:
+
+```json
+{
+  "semantic_analysis":    { "early_stop": true, "failed_edge": {}, "reachability_result": {} },
+  "feasibility_analysis": { "early_stop": true, "reason": "..." },
+  "conclusion": { "verdict": "EARLY_STOP", "reasoning": "Chain analysis stopped at region edge 0: ...",
+                  "failed_edge_index": 0, "failed_edge": {}, "source_method_code": "...",
+                  "early_stop_reason": "..." }
 }
 ```
 
@@ -192,12 +231,13 @@ Verdicts (§3.5):
 | --- | --- |
 | `FEASIBLE` | `SAT(Φ(π))` holds — the chain is exploitable |
 | `NOT_FEASIBLE` | `UNSAT(Φ(π))` |
-| `NOT_REACHABLE` | Stage 2 declared an inter-region edge unreachable |
-| `EARLY_STOP` | Stage-2 early-stop pruning fired before Stage 3 |
+| `EARLY_STOP` | Stage-2 early-stop pruning fired before Stage 3, because an inter-region edge was found unreachable |
 | `ERROR` | Analysis error |
 
 `batch_<id>_chains_report.csv` records one verdict per chain for a whole run, and
-`extract_chains_by_verdict.py` filters a chains file by verdict.
+`extract_chains_by_verdict.py` filters a chains file by verdict. Note that
+`extract_chains_by_verdict.py` still offers `NOT_REACHABLE` as a choice; the coordinator folds that
+outcome into `EARLY_STOP`, so no chain carries it.
 
 ## Gleipner synthetic benchmark (Table 5)
 
@@ -223,4 +263,6 @@ The source code in this repository is licensed under the Apache License 2.0 — 
 `multi-agents/flash/flash.jar` is a modified Flash build that bundles third-party components under
 their own licenses, including LGPL-covered ones (Tai-e, Soot, Heros, Jasmin, Polyglot). The Apache
 License 2.0 does not apply to those. [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) records the
-full inventory, the license of each copyleft component, and the scope of our modification.
+full inventory, the license of each copyleft component, the scope of our modification, and the
+written offer for corresponding source. The referenced license texts are in
+[`licenses/`](licenses/).
