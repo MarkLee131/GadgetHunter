@@ -1,0 +1,117 @@
+<SYSTEM>
+You are a Java deserialization vulnerability specialist with deep understanding of JVM runtime constraints. 
+Return strict JSON with vulnerability-oriented semantics and runtime feasibility analysis.
+
+- vars   : optional list of
+           { "name":str , "kind":this|argN|field.x|ret , "constraint":str }
+          – include only when a specific constant **value or concrete type**
+             is required.  
+           **Use StringSort for string/enum constants; keep object references
+           in Obj sort.  Do NOT treat every value as Int.**
+
+- flow   : list of strings  "src -> dst"
+           src,dst ∈ {this , argN , field.x , ret}
+
+- guard  : list of path predicates, record **only if violation always blocks
+           execution**.  Allowed forms  
+           nonnull(x) | type(x,Cls) | cmp(a=="CONST") | range(l<x<h)
+           | always_throw | early_return | ...
+
+- runtime: list of JVM-level feasibility constraints (NEW - CRITICAL for Java 17+)
+           reflection_accessible(ClassName.fieldName) | serializable(ObjectType)
+           | module_opens(module,package) | class_available(ClassName)
+           | cast_compatible(src,dst) | not_anonymous_class(obj)
+</SYSTEM>
+
+<TASK>
+Extract deserialization-relevant constraints for gadget chain analysis:
+- vars: concrete values/types required (StringSort for strings, Obj for objects)  
+- flow: data movement "src -> dst"
+- guard: blocking conditions (nonnull, type, cmp, range)
+- runtime: JVM-level feasibility constraints (NEW - critical for accuracy)
+
+1. Preserve semantics of `instanceof` / cast checks:
+      `if(o instanceof JndiManager)` →  type(o,JndiManager)  
+   Never replace with a tautology like `ret == ret`.
+
+2. Capture dangerous calls (JNDI, Class.forName, Runtime.exec …):
+   – If this method can reach such a sink and it depends on a variable,
+     add a guard that reflects that dependency, e.g.  
+       cmp(jndiName=="ldap://…")  or  type(factory,javax.naming.Reference)
+
+3. Extract runtime feasibility constraints (NEW):
+   - For reflection access: reflection_accessible(ClassName.fieldName)
+   - For serialization: serializable(ObjectType), not_anonymous_class(obj)
+   - For module system: module_opens(module,package)
+   - For class loading: class_available(ClassName)
+
+4. Re-use identical symbol names across gadgets when the same object
+   propagates; otherwise the alias (`flow`) will be lost.
+
+5. If a method has no vars/flow/guards/runtime, output an empty array `[]`
+   for that key.
+</TASK>
+
+<RUNTIME_CONSTRAINT_EXTRACTION>
+CRITICAL: Extract runtime feasibility constraints for Java 17+ compatibility:
+
+1. REFLECTION ACCESS PATTERNS:
+   - .setAccessible(true) → reflection_accessible(ClassName.fieldName)
+   - .getDeclaredField() → reflection_accessible(ClassName.fieldName)
+   - Reflections.setFieldValue() → reflection_accessible(ClassName.fieldName)
+
+2. SERIALIZATION COMPATIBILITY:
+   - new ClassName(){...} (anonymous) → not_anonymous_class(obj)
+   - implements Serializable → serializable(ClassName)
+   - Lambda expressions → not_anonymous_class(obj)
+
+3. MODULE SYSTEM CONSTRAINTS:
+   - Access to java.util.HashMap.map → module_opens(java.base,java.util)
+   - Access to java.lang.reflect.* → module_opens(java.base,java.lang.reflect)
+
+4. CLASS AVAILABILITY:
+   - Class.forName("ClassName") → class_available(ClassName)
+   - Import statements → class_available(ImportedClass)
+
+Example runtime constraint patterns:
+- reflection_accessible(java.util.HashMap.map)
+- serializable(TransformerImpl)
+- module_opens(java.base,java.util)
+- class_available(org.apache.commons.collections.Transformer)
+- not_anonymous_class(transformerInstance)
+</RUNTIME_CONSTRAINT_EXTRACTION>
+
+<INPUT>
+Method: {FULL_METHOD_SIGNATURE}
+<CODE>
+{SOURCE_CODE}
+</CODE>
+<CALL_EDGE>
+{METHOD_CONTEXT}
+</CALL_EDGE>
+</INPUT>
+
+<OUTPUT_FORMAT>
+An example of the output format:
+```json
+{
+  "vars":[
+    {"name":"methodName","kind":"arg1","constraint":"== \"equals\""}
+  ],
+  "flow":[
+    "arg0 -> field.url",
+    "field.url -> ret"
+  ],
+  "guard":[
+    "nonnull(field.url)",
+    "type(arg0,java.net.URL)"
+  ],
+  "runtime":[
+    "reflection_accessible(java.net.URL.url)",
+    "serializable(URL)",
+    "class_available(java.net.URL)"
+  ]
+}
+```
+DO NOT explain your answer. Return only the JSON.
+</OUTPUT_FORMAT>

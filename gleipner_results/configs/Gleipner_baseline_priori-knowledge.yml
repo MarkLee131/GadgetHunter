@@ -1,0 +1,204 @@
+sinks:
+  # ---- Gleipner benchmark sink methods ----
+  - { method: "<gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>", index: [0] }
+  - { method: "<gleipner.core.Controller: void invokeSink(java.lang.Object[])>", index: [0] }
+
+transfers:
+  # ---- Deserialization entry points ----
+  - { method: "<java.io.ObjectInputStream: java.lang.Object readObject()>", from: base, to: result }
+  - { method: "<java.io.ObjectInputStream: java.lang.Object readUnshared()>", from: base, to: result }
+  - { method: "<java.io.ObjectInput: java.lang.Object readObject()>", from: base, to: result }
+  - { method: "<java.io.ObjectInputStream: java.lang.Object readOrdinaryObject(boolean)>", from: base, to: result }
+  - { method: "<java.io.ObjectInputStream: java.lang.Object readArray(boolean)>", from: base, to: result }
+  - { method: "<java.io.ObjectInputStream: java.lang.String readString(boolean)>", from: base, to: result }
+  - { method: "<java.io.ObjectInputStream: java.io.ObjectInputStream$GetField readFields()>", from: base, to: result }
+  - { method: "<java.io.ObjectInputStream$GetField: java.lang.Object get(java.lang.String,java.lang.Object)>", from: base, to: result }
+
+  # ---- Collection operations (HashMap/Hashtable hash dispatch) ----
+  # These are critical: HashMap.readObject -> hash() -> key.hashCode() is the entry path
+  - { method: "<java.util.Iterator: java.lang.Object next()>", from: base, to: result, type: from }
+  - { method: "<java.util.List: java.util.Iterator iterator()>", from: base, to: result }
+  - { method: "<java.util.Set: java.util.Iterator iterator()>", from: base, to: result, type: from }
+
+  # ---- Basic object operations ----
+  - { method: "<java.lang.Object: java.lang.Class getClass()>", from: base, to: result }
+  - { method: "<java.lang.Object: java.lang.Object clone()>", from: base, to: result }
+
+  # ---- Reflection (minimal, for ysoserial replicas in chains) ----
+  - { method: "<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>", from: 0, to: result }
+  - { method: "<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>", from: 0, to: result }
+  - { method: "<java.lang.Class: java.lang.reflect.Constructor getConstructor(java.lang.Class[])>", from: base, to: result }
+  - { method: "<java.lang.Class: java.lang.reflect.Constructor[] getDeclaredConstructors()>", from: base, to: result }
+  - { method: "<java.lang.Class: java.lang.reflect.Constructor getDeclaredConstructor(java.lang.Class[])>", from: base, to: result }
+  - { method: "<java.lang.Class: java.lang.reflect.Field[] getFields()>", from: base, to: result }
+
+imitates:
+  # ---- Reflection method invocation ----
+  - { method: "<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>", action: connect, jump: inference, fromIdx: base, recIdx: 0, paramIdx: 1 }
+  - { method: "<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>", action: connect, jump: constructor, fromIdx: base, paramIdx: 0 }
+  - { method: "<java.lang.Class: java.lang.Class forName(java.lang.String)>", action: connect, jump: constructor, fromIdx: 0 }
+  - { method: "<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>", action: connect, jump: constructor, fromIdx: 0 }
+
+  # ---- Dynamic proxy (used in some chain paths) ----
+  - { method: "<java.lang.reflect.InvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>", action: connect, jump: inference, fromIdx: base, recIdx: 0, paramIdx: 2 }
+
+  # ---- Collection pollute (for Map.put in Hashtable/HashMap dispatch) ----
+  - { method: "<java.util.Map: java.lang.Object put(java.lang.Object,java.lang.Object)>", action: polluteRec }
+  - { method: "<java.util.Set: boolean add(java.lang.Object)>", action: polluteRec }
+  - { method: "<java.util.Collection: boolean add(java.lang.Object)>", action: polluteRec }
+
+ignores:
+  # ---- Standard I/O primitive reads (don't propagate taint) ----
+  - { method: "<java.io.InputStream: int read()>" }
+  - { method: "<java.io.ObjectInputStream: void defaultReadObject()>" }
+  - { method: "<java.io.ObjectInputStream: int read()>" }
+  - { method: "<java.io.ObjectInputStream: int readInt()>" }
+  - { method: "<java.io.ObjectInputStream: short readShort()>" }
+  - { method: "<java.io.ObjectInputStream: int readUnsignedShort()>" }
+  - { method: "<java.io.ObjectInputStream: int skipBytes(int)>" }
+  - { method: "<java.io.ObjectInputStream: float readFloat()>" }
+  - { method: "<java.io.ObjectInputStream: double readDouble()>" }
+  - { method: "<java.io.ObjectInputStream: long readLong()>" }
+  - { method: "<java.io.ObjectInputStream: boolean readBoolean()>" }
+  - { method: "<java.io.ObjectInputStream: void close()>" }
+  - { method: "<java.io.ObjectOutputStream: void writeObject(java.lang.Object)>" }
+  - { method: "<java.io.ObjectInputStream$GetField: boolean get(java.lang.String,boolean)>" }
+  - { method: "<java.io.ObjectInputStream$GetField: float get(java.lang.String,float)>" }
+  - { method: "<java.io.ObjectInputStream$GetField: long get(java.lang.String,long)>" }
+  - { method: "<java.io.ObjectInputStream$GetField: int get(java.lang.String,int)>" }
+  - { method: "<java.io.ObjectInputStream$GetField: short get(java.lang.String,short)>" }
+  - { method: "<java.io.ObjectInputStream$GetField: double get(java.lang.String,double)>" }
+  - { method: "<java.io.ObjectStreamClass: void invokeReadObjectNoData(java.lang.Object)>" }
+  - { method: "<java.io.ObjectStreamClass: java.lang.Object invokeReadResolve(java.lang.Object)>" }
+  - { method: "<java.io.OutputStream: void close()>" }
+  - { method: "<java.io.DataInput: int readInt()>" }
+  - { method: "<java.io.DataInput: long readLong()>" }
+  - { method: "<java.io.DataInput: java.lang.String readUTF()>" }
+  - { method: "<java.io.DataInput: java.lang.String readLine()>" }
+  - { method: "<java.io.DataInput: short readShort()>" }
+  - { method: "<java.io.DataInput: byte readByte()>" }
+
+  # ---- Basic utility methods ----
+  - { method: "<java.lang.String: java.lang.String toString()>" }
+  - { method: "<java.lang.String: int length()>" }
+  - { method: "<java.lang.StringBuilder: void <init>()>" }
+  - { method: "<java.util.Iterator: boolean hasNext()>" }
+  - { method: "<java.util.UUID: java.util.UUID randomUUID()>" }
+  - { method: "<java.util.Enumeration: boolean hasMoreElements()>" }
+
+  # ---- JDK internal noise methods ----
+  - { method: "<java.util.HashMap: java.util.HashMap$Node[] resize()>" }
+  - { method: "<java.beans.PropertyChangeSupport: void readObject(java.io.ObjectInputStream)>" }
+  - { method: "<java.beans.VetoableChangeSupport: void readObject(java.io.ObjectInputStream)>" }
+  - { method: "<java.security.BasicPermissionCollection: void readObject(java.io.ObjectInputStream)>" }
+  - { method: "<java.lang.System: java.lang.SecurityManager getSecurityManager()>" }
+  - { method: "<java.lang.SecurityManager: void checkRead(java.lang.String)>" }
+  - { method: "<sun.util.logging.PlatformLogger: sun.util.logging.PlatformLogger getLogger(java.lang.String)>" }
+  - { method: "<javax.swing.text.DefaultStyledDocument: void readObject(java.io.ObjectInputStream)>" }
+
+  # ---- Classes to fully ignore (no taint propagation) ----
+  - { class: "java.lang.Object" }
+  - { class: "java.lang.Class" }
+  - { class: "java.lang.String" }
+  - { class: "sun.rmi.server.MarshalInputStream" }
+  - { class: "java.io.ObjectInputStream" }
+  - { class: "java.io.ObjectOutputStream" }
+
+  # ================================================================
+  # GadgetHunter-specific noise reduction (major improvement)
+  # Aggressively filter JDK and framework classes that produce
+  # false chain paths in the Gleipner benchmark
+  # ================================================================
+
+  # ---- Swing/AWT (huge noise source: 434+ edges in depth chains) ----
+  - { classMethod: "javax.swing" }
+  - { classMethod: "java.awt" }
+  - { classMethod: "sun.awt" }
+  - { classMethod: "com.sun.java.swing" }
+
+  # ---- java.time (148+ edges from ZoneId dispatch noise) ----
+  - { classMethod: "java.time" }
+
+  # ---- sun.reflect (1011+ edges from AnnotationInvocationHandler) ----
+  # Note: We keep java.lang.reflect.* for Method.invoke / Constructor
+  - { classMethod: "sun.reflect.annotation" }
+
+  # ---- Locale and i18n noise ----
+  - { classMethod: "sun.util.locale" }
+  - { classMethod: "java.util.Locale" }
+  - { classMethod: "sun.util.calendar" }
+
+  # ---- Networking, NIO, SQL (irrelevant for Gleipner) ----
+  - { classMethod: "java.net" }
+  - { classMethod: "java.nio" }
+  - { classMethod: "java.sql" }
+  - { classMethod: "javax.sql" }
+  - { classMethod: "javax.net" }
+  - { classMethod: "sun.net" }
+
+  # ---- RMI ----
+  - { classMethod: "java.rmi" }
+  - { classMethod: "sun.rmi" }
+
+  # ---- JNDI / Naming (noise from Reference in some chains) ----
+  - { classMethod: "javax.naming" }
+  - { classMethod: "com.sun.jndi" }
+
+  # ---- XML / XSLT ----
+  - { classMethod: "javax.xml" }
+  - { classMethod: "org.xml.sax" }
+  - { classMethod: "org.w3c.dom" }
+  - { classMethod: "com.sun.org.apache.xalan" }
+  - { classMethod: "com.sun.org.apache.xerces" }
+  - { classMethod: "com.sun.org.apache.xml" }
+  - { classMethod: "com.sun.org.apache.xpath" }
+
+  # ---- Scripting engines ----
+  - { classMethod: "javax.script" }
+  - { classMethod: "javax.el" }
+
+  # ---- Security / crypto ----
+  - { classMethod: "javax.crypto" }
+  - { classMethod: "java.security" }
+  - { classMethod: "sun.security" }
+
+  # ---- Beans introspection noise ----
+  - { classMethod: "com.sun.beans" }
+  - { classMethod: "java.beans" }
+  - { classMethod: "sun.reflect.misc" }
+
+  # ---- JAR / ZIP handling ----
+  - { classMethod: "java.util.jar" }
+  - { classMethod: "java.util.zip" }
+
+  # ---- Logging ----
+  - { classMethod: "java.util.logging" }
+  - { classMethod: "sun.util.logging" }
+
+  # ---- Management / JMX ----
+  - { classMethod: "javax.management" }
+  - { classMethod: "java.lang.management" }
+  - { classMethod: "com.sun.jmx" }
+
+  # ---- Regex (not relevant) ----
+  - { classMethod: "java.util.regex" }
+
+  # ---- Math ----
+  - { classMethod: "java.math" }
+
+  # ---- Text formatting ----
+  - { classMethod: "java.text" }
+
+  # ---- Concurrent utilities beyond collections ----
+  # Note: Keep ConcurrentHashMap.readObject as entry point
+  - { classMethod: "java.util.concurrent.atomic" }
+  - { classMethod: "java.util.concurrent.locks" }
+
+  # ---- sun.misc internals ----
+  - { classMethod: "sun.misc" }
+
+  # ---- Compiler / annotation processing ----
+  - { classMethod: "javax.annotation" }
+  - { classMethod: "javax.tools" }
+
+sanitizers: []

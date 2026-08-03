@@ -1,0 +1,158 @@
+<SYSTEM>
+You are an SMT expert and Java deserialization vulnerability specialist with deep understanding of JVM runtime constraints. 
+
+Write a runnable z3-py script that models BOTH logical satisfiability AND runtime feasibility for Java 8 gadget chains.
+
+CRITICAL: Model ALL constraint types - vars, flow, guard, AND runtime. Runtime constraints determine real-world exploitability.
+
+Return the complete filled template ONLY.
+</SYSTEM>
+
+<TASK>
+Create Z3 script for gadget chain satisfiability analysis:
+
+CONSTRAINT TYPES:
+1. **Logic Constraints**:
+   - Flow: "src -> dst" as Z3 equalities
+   - Type: type(x,ClassName) as Function predicates  
+   - Guard: nonnull(x), cmp(x=="value") as Boolean constraints
+
+2. **Runtime Feasibility Constraints**:
+   - Reflection: reflection_accessible(Class.field) for Java 8+ module restrictions
+   - Serialization: serializable(Class), not_anonymous_class(obj)
+   - Module System: module_opens(module,package) for JDK internal access
+   - Class Loading: class_available(ClassName) for dependency availability
+
+Some tips for you:
+1. Use appropriate Z3 variable types: Bool(), Int(), Real(), String(), Sort(), etc.
+   - If every guard uses cmp(...) on a String → stay in Simple (String + Bool).
+   - If any guard uses type(x,Cls) or object equality src -> dst → declare x as Obj (or a bespoke DeclareSort).
+   - Only introduce Datatype() when different constructors of the same Java concept affect reachability (rare; e.g. various ClassLoader subclasses).
+2. Treat the gadget chain as a whole, and do not split it into multiple parts. Especially, try to use the same variable name for the same symbol across gadgets.
+
+<TYPE_CONSTRAINT_HANDLING>
+For each type(x,ClassName) guard constraint:
+1. Declare a function predicate: ClassName = Function('ClassName', Obj, BoolSort)
+2. Add the constraint: solver.add(ClassName(x))
+3. NEVER skip type constraints - they determine gadget chain feasibility.
+
+Example:
+```python
+# For type(result,ExceptionProxy)
+ExceptionProxy = Function('ExceptionProxy', Obj, BoolSort)
+solver.add(ExceptionProxy(result))
+```
+</TYPE_CONSTRAINT_HANDLING>
+
+<NONNULL_CONSTRAINT_HANDLING>
+For each nonnull(x) guard constraint:
+1. Declare a null constant: null_obj = Const('null_obj', Obj)  
+2. Add the constraint: solver.add(x != null_obj)
+3. Ensure null_obj is distinct from all valid objects.
+
+Example:
+```python
+# For nonnull(meth)
+null_obj = Const('null_obj', Obj)
+solver.add(meth != null_obj)
+```
+</NONNULL_CONSTRAINT_HANDLING>
+
+<FLOW_CONSTRAINT_HANDLING>
+For each "src -> dst" flow constraint:
+1. Map variable names correctly (this, arg0, arg1, ret, etc.)
+2. Add equality: solver.add(src_var == dst_var)
+3. Avoid redundant constraints like x == x
+
+Example:
+```python
+# For "this -> meth"
+solver.add(this_var == meth)
+```
+</FLOW_CONSTRAINT_HANDLING>
+
+
+<TYPE_MODELING_GUIDE>
+For type constraints like type(x,ClassName):
+1. Create a function predicate for each Java class:
+   ```python
+   ClassName = Function('ClassName', Obj, BoolSort)
+   ```
+2. Add type assertions:
+   ```python
+   solver.add(ClassName(variable_name))
+   ```
+3. Common Java types in deserialization:
+   - ExceptionProxy, PyObject, PyTuple, String, etc.
+</TYPE_MODELING_GUIDE>
+
+</TASK>
+
+Read the following CONSTRAINTS_DETAILS carefully and model ALL constraints in the gadget chain.
+
+<CONSTRAINTS_DETAILS>
+{CONSTRAINTS_DETAILS}
+</CONSTRAINTS_DETAILS>
+
+Return the complete filled template ONLY.
+
+<OUTPUT_FORMAT>
+```python
+from z3 import *
+
+# ============= Enhanced Z3 Setup =============
+solver = Solver()
+
+# Enhanced sort system
+Obj = DeclareSort('Obj')
+ClassName = DeclareSort('ClassName')
+Module = DeclareSort('Module') 
+Package = DeclareSort('Package')
+
+# Null constants
+NullObj = Const('null_obj', Obj)
+NULL_STR = StringVal("")
+
+# Type system functions
+TypeOf = Function('TypeOf', Obj, ClassName)
+Extends = Function('Extends', ClassName, ClassName, BoolSort())
+
+# Runtime feasibility functions (NEW)
+Serializable = Function('Serializable', ClassName, BoolSort())
+ReflectionAccessible = Function('ReflectionAccessible', ClassName, StringSort(), BoolSort())
+ModuleOpens = Function('ModuleOpens', Module, Package, BoolSort())
+ClassAvailable = Function('ClassAvailable', ClassName, BoolSort())
+
+# ============= Variable Declarations =============
+{VARIABLE_DECLARATIONS_ACROSS_GADGETS}
+
+# ============= Logic Constraints =============
+{LOGIC_CONSTRAINT_ADDITIONS}
+
+# ============= Runtime Feasibility Constraints =============
+{RUNTIME_CONSTRAINT_ADDITIONS}
+
+# ============= Solve and Analyze =============
+result = solver.check()
+print(f'Enhanced Z3 Result: {result}')
+
+if result == sat:
+    model = solver.model()
+    print('\\nLogical Model:')
+    print(model)
+    
+    print('\\nRuntime Feasibility Analysis:')
+    # Add runtime constraint evaluation here
+    
+    print('\\nFeasibility Verdict: POTENTIALLY_FEASIBLE')
+    print('NOTE: Manual verification of runtime constraints recommended')
+    
+elif result == unsat:
+    print('\\nFeasibility Verdict: NOT_FEASIBLE')
+    print('Unsatisfiable core:')
+    print(solver.unsat_core())
+    
+else:
+    print(f'\\nFeasibility Verdict: UNKNOWN (result: {result})')
+```
+</OUTPUT_FORMAT>

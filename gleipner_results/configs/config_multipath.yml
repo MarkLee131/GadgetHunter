@@ -1,0 +1,31 @@
+optionsFile: null
+printHelp: false
+classPath: []
+appClassPath:
+  # Only include the multipath-specific JAR
+  - java-benchmarks/Gleipner/gleipner.chains-1.0-multipath.jar
+inputClasses: []
+javaVersion: 8
+prependJVM: false
+allowPhantom: true
+worldBuilderClass: pascal.taie.frontend.soot.SootWorldBuilder
+outputDir: java-benchmarks/Gleipner/target/gleipner.chains-1.0-multipath
+preBuildIR: false
+worldCacheMode: false
+scope: ALL
+nativeModel: true
+planFile: null
+sources:
+  - "serializable"
+filterNonSerializable: True
+GC_MAX_LEN: 25
+analyses:
+  method-summary: priori-knowledge:java-benchmarks/Gleipner/configs/Gleipner_baseline_priori-knowledge.yml
+GC_OUT: chains
+COLLECT_GC_INPROCESS: False
+GCGraph_COLLECT_TIME: 10
+SINK_MAX_TIME: 180
+LCS_THRESHOLD: 0.8
+onlyGenPlan: false
+keepResult:
+  - $KEEP-ALL

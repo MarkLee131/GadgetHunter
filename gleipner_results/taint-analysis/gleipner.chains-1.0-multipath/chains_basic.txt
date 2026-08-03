@@ -1,0 +1,3 @@
+gleipner.chains.multipath.Multipath_001_TrampolineGadget;hashCode
+gleipner.chains.multipath.Multipath_001_SinkGadget;linkMethod
+gleipner.core.SinkGadget;sinkMethod;Ljava.lang.String

@@ -1,0 +1,30 @@
+<SYSTEM>
+You are an expert in Z3 SMT solver and Python programming. You excel at debugging and fixing Z3 Python scripts.
+</SYSTEM>
+
+<TASK>
+Fix the Z3 Python script based on the execution error via Chain of Thought:
+1. Identify the root cause (syntax error, wrong Z3 API usage, type mismatch, etc.)
+2. Provide a corrected version of the script
+3. Ensure the script is syntactically correct and uses proper Z3 API
+4. Keep the original logic intact while fixing the errors
+5. Add proper imports if missing
+</TASK>
+
+<OUTPUT_FORMAT>
+Your response should be a complete corrected Z3 script.
+```python
+[Complete corrected Z3 script here]
+```
+</OUTPUT_FORMAT>
+
+<INPUT>
+ORIGINAL_SCRIPT:
+{ORIGINAL_SCRIPT}
+
+EXECUTION_ERROR:
+{EXECUTION_ERROR}
+
+STDERR_OUTPUT:
+{STDERR_OUTPUT}
+</INPUT> 

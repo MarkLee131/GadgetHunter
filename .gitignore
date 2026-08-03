@@ -1,8 +1,14 @@
-# Local artefacts (kept on disk for the user to package separately)
-.venv/
-
-# results/ tree
+# Raw per-chain traces and local run outputs, distributed separately.
 results/**
+results_ablation_Buglens/**
+*.tar.gz
+
+taint-configs/
+analysis_scripts/
+
+# Local environment
+.venv/
+.serena/
 
 *.pyc
 *.pyo

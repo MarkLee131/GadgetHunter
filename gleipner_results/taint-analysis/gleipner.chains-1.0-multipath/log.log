@@ -1,0 +1,402 @@
+Flash starts ...
+Output directory: <artifact-root>/java-benchmarks/Gleipner/target/gleipner.chains-1.0-multipath
+WARNING: sun.reflect.Reflection.getCallerClass is not supported. This will impact performance.
+WorldBuilder starts ...
+Scanning <artifact-root>/java-benchmarks/Gleipner/gleipner.chains-1.0-multipath.jar ... 23 classes
+Warning: main class was not given!
+6729 classes with 64176 methods in the world
+WorldBuilder finishes, elapsed time: 2.19s
+Loading priori knowledge config from <artifact-root>/java-benchmarks/Gleipner/configs/Gleipner_baseline_priori-knowledge.yml
+Cannot find ignored method '<java.util.UUID: java.util.UUID randomUUID()>'
+load 2 sinks, 19 transfers, 47 ignores, 8 imitates, 0 sanitizers
+deserialization call graph starts ...
+[+] 1495 possible init target in <sun.misc.Launcher$Factory: java.net.URLStreamHandler createURLStreamHandler(java.lang.String)>
+[+] 1495 possible init target in <java.awt.datatransfer.DataFlavor: java.lang.Class tryToLoadClass(java.lang.String,java.lang.ClassLoader)>
+[+] have analyzed 5000 methods, remaining 442 methods in stack, 58734 methods may need analysis
+[+] 1495 possible init target in <javax.swing.event.EventListenerList: void readObject(java.io.ObjectInputStream)>
+[+] 1495 possible init target in <com.sun.beans.finder.ClassFinder: java.lang.Class findClass(java.lang.String,java.lang.ClassLoader)>
+[+] 1495 possible init target in <java.util.ResourceBundle$RBClassLoader: java.lang.Class loadClass(java.lang.String)>
+[+] 1495 possible init target in <sun.awt.datatransfer.DataTransferer$RMI: java.lang.Class getClass(java.lang.String)>
+[+] 1495 possible init target in <sun.text.bidi.BidiBase$NumericShapings: java.lang.Class getClass(java.lang.String)>
+[+] 1495 possible init target in <sun.text.bidi.BidiBase$TextAttributeConstants: java.lang.Class getClass(java.lang.String)>
+[+] 1495 possible init target in <com.sun.beans.finder.ClassFinder: java.lang.Class findClass(java.lang.String)>
+[+] 1495 possible init target in <com.sun.beans.finder.ClassFinder: java.lang.Class findClass(java.lang.String)>
+[+] have analyzed 10000 methods, remaining 594 methods in stack, 53582 methods may need analysis
+[+] 1495 possible init target in <java.security.Security: java.lang.Class getSpiClass(java.lang.String)>
+[+] 1495 possible init target in <javax.swing.JEditorPane: javax.swing.text.EditorKit createEditorKitForContentType(java.lang.String)>
+[+] 1495 possible init target in <javax.swing.SwingUtilities: java.lang.Class loadSystemClass(java.lang.String)>
+[+] 1495 possible init target in <javax.swing.event.EventListenerList: void readObject(java.io.ObjectInputStream)>
+[+] 1495 possible init target in <java.awt.datatransfer.DataFlavor: java.lang.Class tryToLoadClass(java.lang.String,java.lang.ClassLoader)>
+[+] 1495 possible init target in <java.awt.datatransfer.DataFlavor: java.lang.Class tryToLoadClass(java.lang.String,java.lang.ClassLoader)>
+[+] 349 possible init target in <sun.nio.cs.FastCharsetProvider: java.nio.charset.Charset lookup(java.lang.String)>
+[+] 349 possible init target in <java.security.Provider$Service: java.lang.Class getImplClass()>
+[+] 337 possible init target in <java.security.Provider$Service: java.lang.Object newInstanceGeneric(java.lang.Object)>
+[+] have analyzed 15000 methods, remaining 190 methods in stack, 48986 methods may need analysis
+[+] 337 possible init target in <java.security.Provider$Service: java.lang.Object newInstance(java.lang.Object)>
+[+] 349 possible init target in <java.security.Provider$EngineDescription: java.lang.Class getConstructorParameterClass()>
+[+] 433 possible init target in <java.security.Provider$Service: java.lang.Object newInstance(java.lang.Object)>
+[+] 1495 possible init target in <java.net.URL: java.net.URLStreamHandler getURLStreamHandler(java.lang.String)>
+[+] 1495 possible init target in <java.net.URL: java.net.URLStreamHandler getURLStreamHandler(java.lang.String)>
+[+] 15 possible init target in <java.security.UnresolvedPermission: java.security.Permission resolve(java.security.Permission,java.security.cert.Certificate[])>
+[+] 19 possible init target in <java.security.UnresolvedPermission: java.security.Permission resolve(java.security.Permission,java.security.cert.Certificate[])>
+[+] 15 possible init target in <java.security.UnresolvedPermission: java.security.Permission resolve(java.security.Permission,java.security.cert.Certificate[])>
+[+] 19 possible init target in <java.security.UnresolvedPermission: java.security.Permission resolve(java.security.Permission,java.security.cert.Certificate[])>
+[+] 19 possible init target in <java.security.UnresolvedPermission: java.security.Permission resolve(java.security.Permission,java.security.cert.Certificate[])>
+[+] 1495 possible init target in <sun.security.provider.PolicyFile: java.security.Permission getInstance(java.lang.String,java.lang.String,java.lang.String)>
+[+] 1495 possible init target in <sun.security.provider.PolicyFile: void addPermissions(java.security.Permissions,java.security.CodeSource,java.security.Principal[],sun.security.provider.PolicyFile$PolicyEntry)>
+[+] 1495 possible init target in <sun.security.provider.PolicyFile: void addPermissions(java.security.Permissions,java.security.CodeSource,java.security.Principal[],sun.security.provider.PolicyFile$PolicyEntry)>
+[+] 1495 possible init target in <sun.util.calendar.CalendarSystem: sun.util.calendar.CalendarSystem forName(java.lang.String)>
+deserialization call graph finishes, elapsed time: 25.46s
+collect gc starts ...
+[Dataflow analysis] elapsed time: 25.50s
+backward from <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+[INTERFACE] <java.util.Collections$SetFromMap: void readObject(java.io.ObjectInputStream)> --(line:5507, constraint:[-1, -1, -3, -3])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[INTERFACE] <java.security.UnresolvedPermissionCollection: void readObject(java.io.ObjectInputStream)> --(line:214, constraint:[0, 0, -3, 0])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[INTERFACE] <javax.swing.text.AbstractDocument$AbstractElement: void readObject(java.io.ObjectInputStream)> --(line:2211, constraint:[-1, -1, -3, -3])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: void readObject(java.io.ObjectInputStream)> --(line:349, constraint:[-1, -1, -3, -3])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[INTERFACE] <java.lang.Throwable: void readObject(java.io.ObjectInputStream)> --(line:917, constraint:[-1, -1, -3, -3])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[INTERFACE] <java.security.cert.CertPathValidatorException: void readObject(java.io.ObjectInputStream)> --(line:241, constraint:[-1, -1, -3, -3])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[VIRTUAL] <java.util.concurrent.ConcurrentHashMap: void readObject(java.io.ObjectInputStream)> --(line:1447, constraint:[0])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[VIRTUAL] <javax.swing.text.AbstractDocument$LeafElement: void readObject(java.io.ObjectInputStream)> --(line:2630, constraint:[-1, -3])--> <javax.swing.text.AbstractDocument: javax.swing.text.Position createPosition(int)>
+[INTERFACE] <javax.swing.text.AbstractDocument: javax.swing.text.Position createPosition(int)> --(line:829, constraint:[-1, -1, -3, -3])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[STATIC] <javax.swing.text.StyleContext$NamedStyle: void readObject(java.io.ObjectInputStream)> --(line:1583, constraint:[-3, 0, -1])--> <javax.swing.text.StyleContext: void readAttributeSet(java.io.ObjectInputStream,javax.swing.text.MutableAttributeSet)>
+[INTERFACE] <javax.swing.text.StyleContext: void readAttributeSet(java.io.ObjectInputStream,javax.swing.text.MutableAttributeSet)> --(line:654, constraint:[1, 1, -3, 0])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[STATIC] <javax.swing.text.SimpleAttributeSet: void readObject(java.io.ObjectInputStream)> --(line:342, constraint:[-3, 0, -1])--> <javax.swing.text.StyleContext: void readAttributeSet(java.io.ObjectInputStream,javax.swing.text.MutableAttributeSet)>
+[INTERFACE] <javax.swing.text.StyleContext: void readAttributeSet(java.io.ObjectInputStream,javax.swing.text.MutableAttributeSet)> --(line:654, constraint:[1, 1, -3, 0])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[VIRTUAL] <javax.swing.JComponent: void readObject(java.io.ObjectInputStream)> --(line:5504, constraint:[-3, 0, 0])--> <javax.swing.ArrayTable: void put(java.lang.Object,java.lang.Object)>
+[VIRTUAL] <javax.swing.ArrayTable: void put(java.lang.Object,java.lang.Object)> --(line:117, constraint:[0, 0])--> <java.util.Collections$ReverseComparator2: boolean equals(java.lang.Object)>
+[INTERFACE] <java.util.Collections$ReverseComparator2: boolean equals(java.lang.Object)> --(line:5195, constraint:[-1, -1, -3, 0])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[VIRTUAL] <java.util.concurrent.LinkedBlockingQueue: void readObject(java.io.ObjectInputStream)> --(line:1041, constraint:[-1, 0])--> <java.util.AbstractQueue: boolean add(java.lang.Object)>
+[VIRTUAL] <java.util.AbstractQueue: boolean add(java.lang.Object)> --(line:95, constraint:[-1, 0])--> <java.util.Collections$AsLIFOQueue: boolean offer(java.lang.Object)>
+[INTERFACE] <java.util.Collections$AsLIFOQueue: boolean offer(java.lang.Object)> --(line:5542, constraint:[-1, -1, -3, 0])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[STATIC] <java.util.HashMap: void readObject(java.io.ObjectInputStream)> --(line:1397, constraint:[-3, 0])--> <java.util.HashMap: int hash(java.lang.Object)>
+[VIRTUAL] <java.util.HashMap: int hash(java.lang.Object)> --(line:338, constraint:[0])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[SPECIAL] <java.util.Hashtable: void readObject(java.io.ObjectInputStream)> --(line:1195, constraint:[-1, -3, 0, 0])--> <java.util.Hashtable: void reconstitutionPut(java.util.Hashtable$Entry[],java.lang.Object,java.lang.Object)>
+[VIRTUAL] <java.util.Hashtable: void reconstitutionPut(java.util.Hashtable$Entry[],java.lang.Object,java.lang.Object)> --(line:1218, constraint:[1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[VIRTUAL] <javax.swing.text.html.CSS: void readObject(java.io.ObjectInputStream)> --(line:3368, constraint:[-3, 0, 0])--> <java.util.Hashtable: java.lang.Object put(java.lang.Object,java.lang.Object)>
+[VIRTUAL] <java.util.Hashtable: java.lang.Object put(java.lang.Object,java.lang.Object)> --(line:464, constraint:[0])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[STATIC] <java.time.chrono.Ser: void readExternal(java.io.ObjectInput)> --(line:224, constraint:[-3, -3, 0])--> <java.time.chrono.Ser: java.lang.Object readInternal(byte,java.io.ObjectInput)>
+[STATIC] <java.time.chrono.Ser: java.lang.Object readInternal(byte,java.io.ObjectInput)> --(line:236, constraint:[-3, 1])--> <java.time.chrono.ChronoZonedDateTimeImpl: java.time.chrono.ChronoZonedDateTime readExternal(java.io.ObjectInput)>
+[INTERFACE] <java.time.chrono.ChronoZonedDateTimeImpl: java.time.chrono.ChronoZonedDateTime readExternal(java.io.ObjectInput)> --(line:360, constraint:[0, 0, -3, 0])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[VIRTUAL] <java.security.Provider: void readObject(java.io.ObjectInputStream)> --(line:703, constraint:[-1, -1])--> <java.security.Provider: void putAll(java.util.Map)>
+[SPECIAL] <java.security.Provider: void putAll(java.util.Map)> --(line:244, constraint:[-1, 0])--> <java.security.Provider: void implPutAll(java.util.Map)>
+[INTERFACE] <java.security.Provider: void implPutAll(java.util.Map)> --(line:725, constraint:[0, 0, -3, -3])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[VIRTUAL] <java.awt.TextArea: void readObject(java.io.ObjectInputStream)> --(line:655, constraint:[-1, -3, -3])--> <java.awt.Component: void setFocusTraversalKeys(int,java.util.Set)>
+[VIRTUAL] <java.awt.Component: void setFocusTraversalKeys(int,java.util.Set)> --(line:7219, constraint:[-1, -3, 1])--> <java.awt.Component: void setFocusTraversalKeys_NoIDCheck(int,java.util.Set)>
+[INTERFACE] <java.awt.Component: void setFocusTraversalKeys_NoIDCheck(int,java.util.Set)> --(line:7285, constraint:[-1, -1, -3, 1])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[SPECIAL] <javax.swing.JTree: void readObject(java.io.ObjectInputStream)> --(line:3113, constraint:[-1, 0])--> <javax.swing.JTree: void unarchiveExpandedState(java.lang.Object)>
+[SPECIAL] <javax.swing.JTree: void unarchiveExpandedState(java.lang.Object)> --(line:3176, constraint:[-1, 0])--> <javax.swing.JTree: javax.swing.tree.TreePath getPathForIndexs(int[])>
+[INTERFACE] <javax.swing.JTree: javax.swing.tree.TreePath getPathForIndexs(int[])> --(line:3229, constraint:[-1, -1, -3, -1])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[VIRTUAL] <javax.swing.text.html.CSS: void readObject(java.io.ObjectInputStream)> --(line:3368, constraint:[-3, 0, 0])--> <java.util.Hashtable: java.lang.Object put(java.lang.Object,java.lang.Object)>
+[VIRTUAL] <java.util.Hashtable: java.lang.Object put(java.lang.Object,java.lang.Object)> --(line:469, constraint:[-3, 0])--> <java.util.AbstractList: boolean equals(java.lang.Object)>
+[INTERFACE] <java.util.AbstractList: boolean equals(java.lang.Object)> --(line:520, constraint:[0, 0, -3, -3])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: void readObject(java.io.ObjectInputStream)> --(line:351, constraint:[-1, -1])--> <java.util.Collections$UnmodifiableMap: java.lang.Object get(java.lang.Object)>
+[INTERFACE] <java.util.Collections$UnmodifiableMap: java.lang.Object get(java.lang.Object)> --(line:1454, constraint:[-1, -1, -3, 0])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[SPECIAL] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:62, constraint:[-1])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.String toStringImpl()>
+[STATIC] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.String toStringImpl()> --(line:145, constraint:[-3, -1])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.String memberValueToString(java.lang.Object)>
+[VIRTUAL] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.String memberValueToString(java.lang.Object)> --(line:158, constraint:[0])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[INTERFACE] <java.util.Collections$SetFromMap: void readObject(java.io.ObjectInputStream)> --(line:5507, constraint:[-1])--> <java.util.Collections$CheckedMap: java.util.Set keySet()>
+[INTERFACE] <java.util.Collections$CheckedMap: java.util.Set keySet()> --(line:3624, constraint:[-1, -1, -3, -3])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[SPECIAL] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:62, constraint:[-1])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.String toStringImpl()>
+[STATIC] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.String toStringImpl()> --(line:145, constraint:[-3, -1])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.String memberValueToString(java.lang.Object)>
+[VIRTUAL] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.String memberValueToString(java.lang.Object)> --(line:158, constraint:[0])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[INTERFACE] <java.security.cert.CertPathValidatorException: void readObject(java.io.ObjectInputStream)> --(line:241, constraint:[-1])--> <sun.security.jca.ProviderList$ServiceList: int size()>
+[INTERFACE] <sun.security.jca.ProviderList$ServiceList: int size()> --(line:464, constraint:[-1, -1, -3, -3])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[SPECIAL] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:62, constraint:[-1])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.String toStringImpl()>
+[STATIC] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.String toStringImpl()> --(line:145, constraint:[-3, -1])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.String memberValueToString(java.lang.Object)>
+[VIRTUAL] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.String memberValueToString(java.lang.Object)> --(line:158, constraint:[0])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[VIRTUAL] <javax.swing.ActionMap: void readObject(java.io.ObjectInputStream)> --(line:223, constraint:[-1, 0, 0])--> <javax.swing.ActionMap: void put(java.lang.Object,javax.swing.Action)>
+[VIRTUAL] <javax.swing.ActionMap: void put(java.lang.Object,javax.swing.Action)> --(line:109, constraint:[-3, 0, 1])--> <javax.swing.ArrayTable: void put(java.lang.Object,java.lang.Object)>
+[VIRTUAL] <javax.swing.ArrayTable: void put(java.lang.Object,java.lang.Object)> --(line:117, constraint:[0, 0])--> <java.util.Collections$ReverseComparator2: boolean equals(java.lang.Object)>
+[INTERFACE] <java.util.Collections$ReverseComparator2: boolean equals(java.lang.Object)> --(line:5195, constraint:[-1, -1, -3, 0])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[VIRTUAL] <java.util.HashMap: void readObject(java.io.ObjectInputStream)> --(line:1397, constraint:[-1, -3, 0, 0, -3, -3])--> <java.util.HashMap: java.lang.Object putVal(int,java.lang.Object,java.lang.Object,boolean,boolean)>
+[VIRTUAL] <java.util.HashMap: java.lang.Object putVal(int,java.lang.Object,java.lang.Object,boolean,boolean)> --(line:637, constraint:[-3, -1, -3, -3, 1, 2])--> <java.util.HashMap$TreeNode: java.util.HashMap$TreeNode putTreeVal(java.util.HashMap,java.util.HashMap$Node[],int,java.lang.Object,java.lang.Object)>
+[VIRTUAL] <java.util.HashMap$TreeNode: java.util.HashMap$TreeNode putTreeVal(java.util.HashMap,java.util.HashMap$Node[],int,java.lang.Object,java.lang.Object)> --(line:1970, constraint:[3, -1])--> <java.util.Collections$ReverseComparator2: boolean equals(java.lang.Object)>
+[INTERFACE] <java.util.Collections$ReverseComparator2: boolean equals(java.lang.Object)> --(line:5195, constraint:[-1, -1, -3, 0])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[VIRTUAL] <java.util.concurrent.ConcurrentHashMap: void readObject(java.io.ObjectInputStream)> --(line:1477, constraint:[-3, -3, 0, 0])--> <java.util.concurrent.ConcurrentHashMap$TreeBin: java.util.concurrent.ConcurrentHashMap$TreeNode putTreeVal(int,java.lang.Object,java.lang.Object)>
+[VIRTUAL] <java.util.concurrent.ConcurrentHashMap$TreeBin: java.util.concurrent.ConcurrentHashMap$TreeNode putTreeVal(int,java.lang.Object,java.lang.Object)> --(line:2891, constraint:[-3, -3, 1, 1])--> <java.util.concurrent.ConcurrentHashMap$TreeNode: java.util.concurrent.ConcurrentHashMap$TreeNode findTreeNode(int,java.lang.Object,java.lang.Class)>
+[VIRTUAL] <java.util.concurrent.ConcurrentHashMap$TreeNode: java.util.concurrent.ConcurrentHashMap$TreeNode findTreeNode(int,java.lang.Object,java.lang.Class)> --(line:2689, constraint:[1, -1])--> <java.util.Collections$ReverseComparator2: boolean equals(java.lang.Object)>
+[INTERFACE] <java.util.Collections$ReverseComparator2: boolean equals(java.lang.Object)> --(line:5195, constraint:[-1, -1, -3, 0])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[VIRTUAL] <java.util.HashSet: void readObject(java.io.ObjectInputStream)> --(line:334, constraint:[-3, 0, -3])--> <java.util.HashMap: java.lang.Object put(java.lang.Object,java.lang.Object)>
+[STATIC] <java.util.HashMap: java.lang.Object put(java.lang.Object,java.lang.Object)> --(line:611, constraint:[-3, 0])--> <java.util.HashMap: int hash(java.lang.Object)>
+[VIRTUAL] <java.util.HashMap: int hash(java.lang.Object)> --(line:338, constraint:[0])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[STATIC] <javax.swing.text.html.CSS: void readObject(java.io.ObjectInputStream)> --(line:3359, constraint:[-3, 0])--> <javax.swing.text.StyleContext: java.lang.Object getStaticAttribute(java.lang.Object)>
+[VIRTUAL] <javax.swing.text.StyleContext: java.lang.Object getStaticAttribute(java.lang.Object)> --(line:691, constraint:[-3, 0])--> <java.util.Hashtable: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <java.util.Hashtable: java.lang.Object get(java.lang.Object)> --(line:363, constraint:[0])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[VIRTUAL] <javax.swing.JComponent: void readObject(java.io.ObjectInputStream)> --(line:5504, constraint:[-3, 0, 0])--> <javax.swing.ArrayTable: void put(java.lang.Object,java.lang.Object)>
+[VIRTUAL] <javax.swing.ArrayTable: void put(java.lang.Object,java.lang.Object)> --(line:136, constraint:[0, 0, 1])--> <java.util.Hashtable: java.lang.Object put(java.lang.Object,java.lang.Object)>
+[VIRTUAL] <java.util.Hashtable: java.lang.Object put(java.lang.Object,java.lang.Object)> --(line:464, constraint:[0])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[SPECIAL] <java.util.PriorityQueue: void readObject(java.io.ObjectInputStream)> --(line:795, constraint:[-1])--> <java.util.PriorityQueue: void heapify()>
+[SPECIAL] <java.util.PriorityQueue: void heapify()> --(line:736, constraint:[-1, -3, -1])--> <java.util.PriorityQueue: void siftDown(int,java.lang.Object)>
+[SPECIAL] <java.util.PriorityQueue: void siftDown(int,java.lang.Object)> --(line:687, constraint:[-1, -3, 1])--> <java.util.PriorityQueue: void siftDownUsingComparator(int,java.lang.Object)>
+[INTERFACE] <java.util.PriorityQueue: void siftDownUsingComparator(int,java.lang.Object)> --(line:721, constraint:[-1, -1, -3, 1])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[SPECIAL] <javax.swing.text.AbstractDocument: void readObject(java.io.ObjectInputStream)> --(line:1437, constraint:[-3, -1])--> <javax.swing.text.AbstractDocument$BidiRootElement: void <init>(javax.swing.text.AbstractDocument)>
+[SPECIAL] <javax.swing.text.AbstractDocument$BidiRootElement: void <init>(javax.swing.text.AbstractDocument)> --(line:2653, constraint:[-1, 0, -3, -3])--> <javax.swing.text.AbstractDocument$AbstractElement: void <init>(javax.swing.text.AbstractDocument,javax.swing.text.Element,javax.swing.text.AttributeSet)>
+[INTERFACE] <javax.swing.text.AbstractDocument$AbstractElement: void <init>(javax.swing.text.AbstractDocument,javax.swing.text.Element,javax.swing.text.AttributeSet)> --(line:1775, constraint:[0, 0, -3, -3])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[SPECIAL] <java.util.TreeMap$SubMap: java.lang.Object readResolve()> --(line:2025, constraint:[-3, -1, -3, -1, -3, -3, -1, -3])--> <java.util.TreeMap$NavigableSubMap: void <init>(java.util.TreeMap,boolean,java.lang.Object,boolean,boolean,java.lang.Object,boolean)>
+[VIRTUAL] <java.util.TreeMap$NavigableSubMap: void <init>(java.util.TreeMap,boolean,java.lang.Object,boolean,boolean,java.lang.Object,boolean)> --(line:1367, constraint:[0, 2, 2])--> <java.util.TreeMap: int compare(java.lang.Object,java.lang.Object)>
+[INTERFACE] <java.util.TreeMap: int compare(java.lang.Object,java.lang.Object)> --(line:1291, constraint:[-1, -1, -3, 0])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[SPECIAL] <javax.swing.text.AbstractDocument: void readObject(java.io.ObjectInputStream)> --(line:1441, constraint:[-3, -1, -1, -3, -3, -3])--> <javax.swing.text.AbstractDocument$BidiElement: void <init>(javax.swing.text.AbstractDocument,javax.swing.text.Element,int,int,int)>
+[SPECIAL] <javax.swing.text.AbstractDocument$BidiElement: void <init>(javax.swing.text.AbstractDocument,javax.swing.text.Element,int,int,int)> --(line:2674, constraint:[-1, 0, 1, -3, -3, -3])--> <javax.swing.text.AbstractDocument$LeafElement: void <init>(javax.swing.text.AbstractDocument,javax.swing.text.Element,javax.swing.text.AttributeSet,int,int)>
+[VIRTUAL] <javax.swing.text.AbstractDocument$LeafElement: void <init>(javax.swing.text.AbstractDocument,javax.swing.text.Element,javax.swing.text.AttributeSet,int,int)> --(line:2504, constraint:[0, -3])--> <javax.swing.text.AbstractDocument: javax.swing.text.Position createPosition(int)>
+[INTERFACE] <javax.swing.text.AbstractDocument: javax.swing.text.Position createPosition(int)> --(line:829, constraint:[-1, -1, -3, -3])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[VIRTUAL] <javax.swing.AbstractAction: void readObject(java.io.ObjectInputStream)> --(line:364, constraint:[-1, 0, 0])--> <javax.swing.AbstractAction: void putValue(java.lang.String,java.lang.Object)>
+[VIRTUAL] <javax.swing.AbstractAction: void putValue(java.lang.String,java.lang.Object)> --(line:211, constraint:[-1, 0, -3, 1])--> <javax.swing.AbstractAction: void firePropertyChange(java.lang.String,java.lang.Object,java.lang.Object)>
+[VIRTUAL] <javax.swing.AbstractAction: void firePropertyChange(java.lang.String,java.lang.Object,java.lang.Object)> --(line:273, constraint:[1, 2])--> <java.util.AbstractList: boolean equals(java.lang.Object)>
+[INTERFACE] <java.util.AbstractList: boolean equals(java.lang.Object)> --(line:520, constraint:[0, 0, -3, -3])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[STATIC] <java.net.URL: void readObject(java.io.ObjectInputStream)> --(line:1247, constraint:[-3, -1])--> <java.net.URL: java.net.URLStreamHandler getURLStreamHandler(java.lang.String)>
+[VIRTUAL] <java.net.URL: java.net.URLStreamHandler getURLStreamHandler(java.lang.String)> --(line:1212, constraint:[-3, 0, 0])--> <java.util.Hashtable: java.lang.Object put(java.lang.Object,java.lang.Object)>
+[VIRTUAL] <java.util.Hashtable: java.lang.Object put(java.lang.Object,java.lang.Object)> --(line:469, constraint:[-3, 0])--> <java.util.AbstractList: boolean equals(java.lang.Object)>
+[INTERFACE] <java.util.AbstractList: boolean equals(java.lang.Object)> --(line:520, constraint:[0, 0, -3, -3])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:69, constraint:[-1, 1])--> <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)>
+[VIRTUAL] <javax.swing.UIDefaults$TextAndMnemonicHashMap: java.lang.Object get(java.lang.Object)> --(line:1275, constraint:[-1])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[VIRTUAL] <javax.swing.JComponent: void readObject(java.io.ObjectInputStream)> --(line:5491, constraint:[-3, 0, -1])--> <java.util.Hashtable: java.lang.Object put(java.lang.Object,java.lang.Object)>
+[VIRTUAL] <java.util.Hashtable: java.lang.Object put(java.lang.Object,java.lang.Object)> --(line:469, constraint:[-3, 0])--> <javax.sound.sampled.AudioFormat$Encoding: boolean equals(java.lang.Object)>
+[VIRTUAL] <javax.sound.sampled.AudioFormat$Encoding: boolean equals(java.lang.Object)> --(line:639, constraint:[0])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[INTERFACE] <java.security.UnresolvedPermissionCollection: void readObject(java.io.ObjectInputStream)> --(line:214, constraint:[0, 0, -3, 0])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[SPECIAL] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:59, constraint:[-1, 2])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Boolean equalsImpl(java.lang.Object)>
+[STATIC] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Boolean equalsImpl(java.lang.Object)> --(line:204, constraint:[-3, -1, 0])--> <sun.reflect.annotation.AnnotationInvocationHandler: boolean memberValueEquals(java.lang.Object,java.lang.Object)>
+[VIRTUAL] <sun.reflect.annotation.AnnotationInvocationHandler: boolean memberValueEquals(java.lang.Object,java.lang.Object)> --(line:238, constraint:[0, 1])--> <javax.sound.sampled.AudioFormat$Encoding: boolean equals(java.lang.Object)>
+[VIRTUAL] <javax.sound.sampled.AudioFormat$Encoding: boolean equals(java.lang.Object)> --(line:639, constraint:[0])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[INTERFACE] <sun.reflect.annotation.AnnotationInvocationHandler: void readObject(java.io.ObjectInputStream)> --(line:351, constraint:[-1, -1, -3, -1])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[SPECIAL] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:59, constraint:[-1, 2])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Boolean equalsImpl(java.lang.Object)>
+[STATIC] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Boolean equalsImpl(java.lang.Object)> --(line:204, constraint:[-3, -1, 0])--> <sun.reflect.annotation.AnnotationInvocationHandler: boolean memberValueEquals(java.lang.Object,java.lang.Object)>
+[VIRTUAL] <sun.reflect.annotation.AnnotationInvocationHandler: boolean memberValueEquals(java.lang.Object,java.lang.Object)> --(line:238, constraint:[0, 1])--> <javax.sound.sampled.AudioFormat$Encoding: boolean equals(java.lang.Object)>
+[VIRTUAL] <javax.sound.sampled.AudioFormat$Encoding: boolean equals(java.lang.Object)> --(line:639, constraint:[0])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[INTERFACE] <java.util.Collections$SetFromMap: void readObject(java.io.ObjectInputStream)> --(line:5507, constraint:[-1, -1, -3, -3])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[SPECIAL] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:59, constraint:[-1, 2])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Boolean equalsImpl(java.lang.Object)>
+[STATIC] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Boolean equalsImpl(java.lang.Object)> --(line:204, constraint:[-3, -1, 0])--> <sun.reflect.annotation.AnnotationInvocationHandler: boolean memberValueEquals(java.lang.Object,java.lang.Object)>
+[VIRTUAL] <sun.reflect.annotation.AnnotationInvocationHandler: boolean memberValueEquals(java.lang.Object,java.lang.Object)> --(line:238, constraint:[0, 1])--> <java.util.concurrent.ConcurrentHashMap: boolean equals(java.lang.Object)>
+[VIRTUAL] <java.util.concurrent.ConcurrentHashMap: boolean equals(java.lang.Object)> --(line:1359, constraint:[0, -1])--> <javax.sound.sampled.AudioFormat$Encoding: boolean equals(java.lang.Object)>
+[VIRTUAL] <javax.sound.sampled.AudioFormat$Encoding: boolean equals(java.lang.Object)> --(line:639, constraint:[0])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[INTERFACE] <javax.swing.text.AbstractDocument$AbstractElement: void readObject(java.io.ObjectInputStream)> --(line:2211, constraint:[-1, -1, -3, -3])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[SPECIAL] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:59, constraint:[-1, 2])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Boolean equalsImpl(java.lang.Object)>
+[STATIC] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Boolean equalsImpl(java.lang.Object)> --(line:204, constraint:[-3, -1, 0])--> <sun.reflect.annotation.AnnotationInvocationHandler: boolean memberValueEquals(java.lang.Object,java.lang.Object)>
+[VIRTUAL] <sun.reflect.annotation.AnnotationInvocationHandler: boolean memberValueEquals(java.lang.Object,java.lang.Object)> --(line:238, constraint:[0, 1])--> <java.util.concurrent.ConcurrentHashMap: boolean equals(java.lang.Object)>
+[VIRTUAL] <java.util.concurrent.ConcurrentHashMap: boolean equals(java.lang.Object)> --(line:1359, constraint:[0, -1])--> <javax.sound.sampled.AudioFormat$Encoding: boolean equals(java.lang.Object)>
+[VIRTUAL] <javax.sound.sampled.AudioFormat$Encoding: boolean equals(java.lang.Object)> --(line:639, constraint:[0])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[INTERFACE] <java.lang.Throwable: void readObject(java.io.ObjectInputStream)> --(line:917, constraint:[-1, -1, -3, -3])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[SPECIAL] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:59, constraint:[-1, 2])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Boolean equalsImpl(java.lang.Object)>
+[STATIC] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Boolean equalsImpl(java.lang.Object)> --(line:204, constraint:[-3, -1, 0])--> <sun.reflect.annotation.AnnotationInvocationHandler: boolean memberValueEquals(java.lang.Object,java.lang.Object)>
+[VIRTUAL] <sun.reflect.annotation.AnnotationInvocationHandler: boolean memberValueEquals(java.lang.Object,java.lang.Object)> --(line:238, constraint:[0, 1])--> <java.util.concurrent.ConcurrentHashMap: boolean equals(java.lang.Object)>
+[VIRTUAL] <java.util.concurrent.ConcurrentHashMap: boolean equals(java.lang.Object)> --(line:1359, constraint:[0, -1])--> <javax.sound.sampled.AudioFormat$Encoding: boolean equals(java.lang.Object)>
+[VIRTUAL] <javax.sound.sampled.AudioFormat$Encoding: boolean equals(java.lang.Object)> --(line:639, constraint:[0])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+[INTERFACE] <java.security.cert.CertPathValidatorException: void readObject(java.io.ObjectInputStream)> --(line:241, constraint:[-1, -1, -3, -3])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>
+[SPECIAL] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])> --(line:59, constraint:[-1, 2])--> <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Boolean equalsImpl(java.lang.Object)>
+[STATIC] <sun.reflect.annotation.AnnotationInvocationHandler: java.lang.Boolean equalsImpl(java.lang.Object)> --(line:204, constraint:[-3, -1, 0])--> <sun.reflect.annotation.AnnotationInvocationHandler: boolean memberValueEquals(java.lang.Object,java.lang.Object)>
+[VIRTUAL] <sun.reflect.annotation.AnnotationInvocationHandler: boolean memberValueEquals(java.lang.Object,java.lang.Object)> --(line:238, constraint:[0, 1])--> <java.util.concurrent.ConcurrentHashMap: boolean equals(java.lang.Object)>
+[VIRTUAL] <java.util.concurrent.ConcurrentHashMap: boolean equals(java.lang.Object)> --(line:1359, constraint:[0, -1])--> <javax.sound.sampled.AudioFormat$Encoding: boolean equals(java.lang.Object)>
+[VIRTUAL] <javax.sound.sampled.AudioFormat$Encoding: boolean equals(java.lang.Object)> --(line:639, constraint:[0])--> <java.awt.image.BufferedImage: java.lang.String toString()>
+[VIRTUAL] <java.awt.image.BufferedImage: java.lang.String toString()> --(line:1242, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_TrampolineGadget: int hashCode()> --(line:55, constraint:[-1])--> <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()>
+[VIRTUAL] <gleipner.chains.multipath.Multipath_001_SinkGadget: void linkMethod()> --(line:26, constraint:[-1, -1])--> <gleipner.core.SinkGadget: void sinkMethod(java.lang.String)>
+
+backward from <gleipner.core.Controller: void invokeSink(java.lang.Object[])>
+total gadget chains : 42
+collect gc finishes, elapsed time: 180.00s
+Flash finishes, elapsed time: 207.98s

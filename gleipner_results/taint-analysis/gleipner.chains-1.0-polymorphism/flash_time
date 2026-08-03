@@ -1,0 +1,4 @@
+WorldBuilder finishes, elapsed time: 4.22s
+deserialization call graph finishes, elapsed time: 101.21s
+collect gc finishes, elapsed time: 180.02s
+Flash finishes, elapsed time: 285.75s
