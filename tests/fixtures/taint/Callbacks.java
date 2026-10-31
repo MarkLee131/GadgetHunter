@@ -31,3 +31,12 @@ class ExternalCallbacks implements Externalizable {
 class InheritedSerializable extends Callbacks {
     private void readObjectNoData() { }
 }
+
+// Dynamic-proxy handlers: only the Serializable one is a proxy-dispatch root.
+class SerializableHandler implements java.lang.reflect.InvocationHandler, Serializable {
+    public Object invoke(Object proxy, java.lang.reflect.Method method, Object[] args) { return null; }
+}
+
+class PlainHandler implements java.lang.reflect.InvocationHandler {
+    public Object invoke(Object proxy, java.lang.reflect.Method method, Object[] args) { return null; }
+}

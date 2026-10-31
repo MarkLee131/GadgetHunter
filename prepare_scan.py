@@ -18,7 +18,7 @@ import yaml
 from scan_rules.archives import normalize
 from scan_rules.boundaries import derive_stream_boundaries
 from scan_rules.coverage import coverage_gaps, select_profiles, target_calls
-from scan_rules.inventory import inventory, native_entries
+from scan_rules.inventory import inventory, native_entries, proxy_entries
 from scan_rules.purity import Checker, ignore_reason
 
 ROOT = Path(__file__).resolve().parent
@@ -133,7 +133,7 @@ def runtime_version(runtime_dir):
     return None
 
 
-def prepare(apps, libraries, java_home, output, profiles):
+def prepare(apps, libraries, java_home, output, profiles, proxy_roots_enabled=False):
     apps = [Path(p).expanduser().resolve(strict=True) for p in apps]
     libraries = [Path(p).expanduser().resolve(strict=True) for p in libraries]
     java_home = Path(java_home).expanduser().resolve(strict=True)
@@ -151,13 +151,13 @@ def prepare(apps, libraries, java_home, output, profiles):
         raise ValueError(f"Output already exists; choose a fresh directory: {output}")
     output.mkdir(parents=True, exist_ok=False)
     try:
-        return prepare_into(output, apps, libraries, runtime, runtime_dir, java_home, profiles)
+        return prepare_into(output, apps, libraries, runtime, runtime_dir, java_home, profiles, proxy_roots_enabled)
     except BaseException:
         shutil.rmtree(output)
         raise
 
 
-def prepare_into(output, apps, libraries, runtime, runtime_dir, java_home, profiles):
+def prepare_into(output, apps, libraries, runtime, runtime_dir, java_home, profiles, proxy_roots_enabled=False):
     # Fat JAR, WAR and multi-release inputs become ordinary JARs under output/classpath.
     apps, libraries, archives = normalize(apps, libraries, runtime, output / "classpath")
     classes = inventory(runtime)
@@ -184,6 +184,8 @@ def prepare_into(output, apps, libraries, runtime, runtime_dir, java_home, profi
                          "class_sha256": targets[method.owner].digest, "origin": targets[method.owner].origin})
     gaps = coverage_gaps(calls, callers, classes, {rule["method"] for section in compiled.values() for rule in section})
     entries = native_entries(classes)
+    proxy_roots = proxy_entries(classes) if proxy_roots_enabled else []
+    entries = sorted(set(entries) | set(proxy_roots))
     # Flash resolves knowledge against its loaded world, not every class on disk.
     # Seed owners explicitly so unused library sinks/callbacks are not silently skipped.
     input_classes = sorted({item["method"][1:].split(":", 1)[0] for item in included}
@@ -196,7 +198,7 @@ def prepare_into(output, apps, libraries, runtime, runtime_dir, java_home, profi
         "backend_sha256": hashlib.sha256((ROOT / "multi-agents/flash/flash.jar").read_bytes()).hexdigest(),
         "class_count": len(classes), "application_class_count": app_class_count,
         "inventory_sha256": hashlib.sha256(json.dumps(sorted((c.name, c.digest) for c in classes.values())).encode()).hexdigest(),
-        "entries": entries, "input_classes": input_classes,
+        "entries": entries, "proxy_roots": proxy_roots, "input_classes": input_classes,
         "included_rules": included, "unresolved_rules": missing,
         "unresolved_hierarchy_types": unresolved,
         "classpath_normalization": archives,
@@ -252,11 +254,12 @@ def main():
     parser.add_argument("--lib", action="append", default=[], help="Dependency JAR or class directory; repeatable")
     parser.add_argument("--java8-home", required=True, help="Java 8 target runtime (separate from the JVM running Flash)")
     parser.add_argument("--output", required=True, help="New preparation directory")
+    parser.add_argument("--proxy-roots", action="store_true", help="Add Serializable InvocationHandler.invoke methods as dynamic-proxy dispatch roots (experimental)")
     parser.add_argument("--profile", action="append", choices=("auto", *PROFILES),
                         help="Repeatable; default 'auto' selects profiles from the target bytecode")
     args = parser.parse_args()
     try:
-        manifest = prepare(args.app, args.lib, args.java8_home, args.output, args.profile or ["auto"])
+        manifest = prepare(args.app, args.lib, args.java8_home, args.output, args.profile or ["auto"], args.proxy_roots)
     except (ValueError, OSError, KeyError, IndexError, TypeError, UnicodeError, zipfile.BadZipFile, yaml.YAMLError) as exc:
         parser.error(str(exc))
     print(f"Prepared {len(manifest['entries'])} callback candidates, {len(manifest['included_rules'])} resolved rules.")

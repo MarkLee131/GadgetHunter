@@ -272,6 +272,31 @@ def native_entries(classes):
     return sorted(entries)
 
 
+def proxy_entries(classes):
+    """Serializable InvocationHandler.invoke methods: dynamic-proxy dispatch roots.
+
+    A java.lang.reflect.Proxy built during deserialization dispatches every
+    interface call to its handler's invoke. The backend does not synthesize that
+    dispatch edge (a stream-built proxy has no points-to target), so these handlers
+    are invisible as search roots. Treating invoke as an additional callback lets
+    the backend emit handler-to-sink fragments for stitching, the way JDD models
+    dynamic proxies at the gadget-chain level. The handler's own fields (this) are
+    the attacker-controlled state, exactly like a native readObject callback.
+    """
+    entries = []
+    for cls in classes.values():
+        if cls.flags & (0x0200 | 0x4000):
+            continue  # interfaces and enums do not supply a concrete handler
+        if not (is_subtype(cls.name, "java.lang.reflect.InvocationHandler", classes)
+                and is_subtype(cls.name, "java.io.Serializable", classes)):
+            continue
+        for method in cls.methods:
+            if (method.name == "invoke" and not method.static and method.returns == "java.lang.Object"
+                    and method.parameters == ("java.lang.Object", "java.lang.reflect.Method", "java.lang.Object[]")):
+                entries.append(method.signature)
+    return sorted(entries)
+
+
 def instructions(code: Code):
     """Yield (offset, opcode) for each instruction, decoding operand lengths."""
     data, offset = code.bytecode, 0

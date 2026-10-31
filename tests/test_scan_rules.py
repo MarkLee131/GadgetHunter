@@ -11,7 +11,7 @@ import yaml
 from pathlib import Path
 
 from prepare_scan import compile_profiles, prepare, validate_rule
-from scan_rules.inventory import Code, JavaClass, Method, descriptor_types, inventory, native_entries, read_class
+from scan_rules.inventory import Code, JavaClass, Method, descriptor_types, inventory, native_entries, proxy_entries, read_class
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -107,6 +107,15 @@ class InventoryTests(unittest.TestCase):
         self.assertIn("<fixtures.InheritedSerializable: void readObjectNoData()>", entries)
         self.assertIn("<fixtures.ExternalCallbacks: void readExternal(java.io.ObjectInput)>", entries)
         self.assertFalse(any("WrongHooks" in item or "NotSerializable" in item for item in entries))
+
+    def test_proxy_entries_select_serializable_invocation_handlers(self):
+        classes = inventory([self.classes])
+        classes["java.lang.reflect.InvocationHandler"] = JavaClass("java.lang.reflect.InvocationHandler",
+            "java.lang.Object", (), (), 0x0201, 52, "rt.jar", "c" * 64)
+        roots = proxy_entries(classes)
+        self.assertIn("<fixtures.SerializableHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>", roots)
+        # A handler that is not Serializable cannot be a deserialized proxy dispatch root.
+        self.assertFalse(any("PlainHandler" in r for r in roots))
 
     def test_truncation_and_newer_bytecode_are_rejected(self):
         data = (self.classes / "fixtures/Callbacks.class").read_bytes()
