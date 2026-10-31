@@ -43,7 +43,11 @@ effects:
               com.alibaba.fastjson.JSON.parse, com.alibaba.fastjson.JSON.parseObject]
   - family: reflective-invocation
     priority: 1
-    methods: [java.lang.reflect.Method.invoke, java.lang.reflect.Constructor.newInstance]
+    methods: [java.lang.reflect.Method.invoke, java.lang.reflect.Constructor.newInstance,
+              org.apache.commons.beanutils.PropertyUtils.getProperty, org.apache.commons.beanutils.PropertyUtils.getSimpleProperty,
+              org.apache.commons.beanutils.PropertyUtils.getNestedProperty, org.apache.commons.beanutils.PropertyUtils.getIndexedProperty,
+              org.apache.commons.beanutils.BeanUtils.getProperty, org.apache.commons.beanutils.PropertyUtilsBean.getProperty,
+              org.apache.commons.beanutils.PropertyUtilsBean.getSimpleProperty, org.apache.commons.beanutils.PropertyUtilsBean.getNestedProperty]
   - family: file-write
     priority: 1
     methods: [java.io.FileOutputStream.<init>, java.io.FileWriter.<init>, java.nio.file.Files.write,

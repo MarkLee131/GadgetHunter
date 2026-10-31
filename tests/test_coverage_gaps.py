@@ -56,6 +56,16 @@ class CoverageTests(unittest.TestCase):
         # A method with a built-in rule is not a gap.
         self.assertEqual(coverage_gaps(calls, callers, self.classes, covered={ENGINE})["unimplemented_total"], 0)
 
+    def test_property_access_profile_selected_on_beanutils_facade_calls(self):
+        from collections import Counter
+        from scan_rules.coverage import select_profiles
+        calls = Counter({("org.apache.commons.beanutils.PropertyUtils", "getProperty", "(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;"): 3})
+        profiles, reasons = select_profiles(calls)
+        self.assertIn("property-access", profiles)
+        self.assertIn("property-access", reasons)
+        # No facade call: profile not selected.
+        self.assertNotIn("property-access", select_profiles(Counter())[0])
+
     def test_model_proposals_are_validated_and_marked_as_hypotheses(self):
         calls, callers = target_calls(self.targets)
         manifest = {"coverage_gaps": coverage_gaps(calls, callers, self.classes, covered=set())}

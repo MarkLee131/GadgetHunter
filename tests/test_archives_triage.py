@@ -151,6 +151,13 @@ class TriageTests(unittest.TestCase):
         self.assertEqual(novel_item["rank"], 0)
         self.assertEqual(report["summary"]["novel_unblocked"], 1)
 
+    def test_beanutils_property_facade_is_reflective_and_known(self):
+        chain = [edge("<java.util.PriorityQueue: void readObject(java.io.ObjectInputStream)>", "<org.apache.commons.beanutils.BeanComparator: int compare(java.lang.Object,java.lang.Object)>"),
+                 edge("<org.apache.commons.beanutils.BeanComparator: int compare(java.lang.Object,java.lang.Object)>", "<org.apache.commons.beanutils.PropertyUtils: java.lang.Object getProperty(java.lang.Object,java.lang.String)>")]
+        item = triage_chains([chain], runtime="1.8.0_432")["candidates"][0]
+        self.assertEqual(item["families"], ["commons-beanutils"])
+        self.assertEqual(item["effect"], "reflective-invocation")
+
     def test_fastjson2_container_tostring_is_known(self):
         for owner in ("JSONObject", "JSONArray"):
             chain = [edge("<javax.management.BadAttributeValueExpException: void readObject(java.io.ObjectInputStream)>", f"<com.alibaba.fastjson2.{owner}: java.lang.String toString()>"),

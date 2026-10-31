@@ -22,7 +22,7 @@ from scan_rules.inventory import inventory, native_entries
 from scan_rules.purity import Checker, ignore_reason
 
 ROOT = Path(__file__).resolve().parent
-PROFILES = ("native-core", "jdk-propagation", "modern-effects", "reflection-dispatch", "reflection-boundaries")
+PROFILES = ("native-core", "jdk-propagation", "modern-effects", "reflection-dispatch", "reflection-boundaries", "property-access")
 # Profiles whose transfers must be non-overridable; checked against the scanned classpath.
 STRICT_TRANSFERS = ("jdk-propagation",)
 SECTIONS = ("sinks", "transfers", "imitates", "ignores", "sanitizers")

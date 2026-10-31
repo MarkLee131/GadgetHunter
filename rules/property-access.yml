@@ -1,0 +1,22 @@
+# Property-access facades that reflectively invoke a getter on a controlled bean.
+# Commons Beanutils' PropertyUtils/BeanUtils reach the bean's getter through
+# PropertyUtilsBean, whose receiver comes from a ContextClassLoaderLocal registry
+# with no points-to target, so the backend cannot follow the static facade to the
+# instance method. The facade is the reflective-invocation boundary: its bean
+# argument (index 0) is the controlled object whose getter runs. This recovers the
+# public PriorityQueue -> BeanComparator -> PropertyUtils.getProperty family without
+# modeling the unresolved registry hop. A controlled property name is not required
+# for the known chain, so only the bean is marked.
+sinks:
+  - {method: "<org.apache.commons.beanutils.PropertyUtils: java.lang.Object getProperty(java.lang.Object,java.lang.String)>", index: [0]}
+  - {method: "<org.apache.commons.beanutils.PropertyUtils: java.lang.Object getSimpleProperty(java.lang.Object,java.lang.String)>", index: [0]}
+  - {method: "<org.apache.commons.beanutils.PropertyUtils: java.lang.Object getNestedProperty(java.lang.Object,java.lang.String)>", index: [0]}
+  - {method: "<org.apache.commons.beanutils.PropertyUtils: java.lang.Object getIndexedProperty(java.lang.Object,java.lang.String)>", index: [0]}
+  - {method: "<org.apache.commons.beanutils.BeanUtils: java.lang.String getProperty(java.lang.Object,java.lang.String)>", index: [0]}
+  - {method: "<org.apache.commons.beanutils.PropertyUtilsBean: java.lang.Object getProperty(java.lang.Object,java.lang.String)>", index: [0]}
+  - {method: "<org.apache.commons.beanutils.PropertyUtilsBean: java.lang.Object getSimpleProperty(java.lang.Object,java.lang.String)>", index: [0]}
+  - {method: "<org.apache.commons.beanutils.PropertyUtilsBean: java.lang.Object getNestedProperty(java.lang.Object,java.lang.String)>", index: [0]}
+transfers: []
+imitates: []
+ignores: []
+sanitizers: []
