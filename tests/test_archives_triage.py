@@ -151,6 +151,13 @@ class TriageTests(unittest.TestCase):
         self.assertEqual(novel_item["rank"], 0)
         self.assertEqual(report["summary"]["novel_unblocked"], 1)
 
+    def test_fastjson2_container_tostring_is_known(self):
+        for owner in ("JSONObject", "JSONArray"):
+            chain = [edge("<javax.management.BadAttributeValueExpException: void readObject(java.io.ObjectInputStream)>", f"<com.alibaba.fastjson2.{owner}: java.lang.String toString()>"),
+                     edge(f"<com.alibaba.fastjson2.{owner}: java.lang.String toString()>", "<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>")]
+            item = triage_chains([chain], runtime="1.8.0_432")["candidates"][0]
+            self.assertEqual(item["families"], ["fastjson-tostring"])
+
     def test_own_stream_reads_are_not_secondary_deserializers(self):
         chain = [edge("<vendor.Bag: void readObject(java.io.ObjectInputStream)>", "<java.io.ObjectInputStream: java.lang.Object readObject()>")]
 

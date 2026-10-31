@@ -130,7 +130,8 @@ families:
   - id: fastjson-tostring
     source: public research; fastjson JSON toString reaches bean getters
     core_methods: [com.alibaba.fastjson.JSON.toString, com.alibaba.fastjson.JSON.toJSONString,
-                   com.alibaba.fastjson2.JSON.toJSONString]
+                   com.alibaba.fastjson2.JSON.toJSONString, com.alibaba.fastjson2.JSONObject.toString,
+                   com.alibaba.fastjson2.JSONArray.toString]
   # Reusable building blocks. A chain using only these can still be new.
   - id: jdk-common-blocks
     source: https://github.com/frohoff/ysoserial
