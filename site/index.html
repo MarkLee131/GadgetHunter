@@ -309,14 +309,13 @@ python main.py --chains-file ../scans/service/chains.review \
     <h2>Know what a result means.</h2>
     <div class="two">
       <ul>
-        <li><strong>Candidates are leads, not exploits.</strong> <code>FEASIBLE</code> means the extracted constraints are satisfiable, not that a payload works.</li>
-        <li><strong>Search is bounded.</strong> A <code>partial</code> scan keeps complete chains, but no candidates does not mean safe.</li>
-        <li><strong>Exposure is a separate question.</strong> A library chain matters only if the application deserializes untrusted data with that classpath and runtime.</li>
-        <li><strong>"Novel" is relative to the catalog.</strong> Search public research before reporting.</li>
+        <li><strong>Candidates are leads, not exploits.</strong> <code>FEASIBLE</code> means the constraints are satisfiable, not that a payload runs.</li>
+        <li><strong>A <code>partial</code> scan stopped at its budget.</strong> No result is a lower bound, not an all-clear.</li>
+        <li><strong>"Novel" means not in the catalog,</strong> not necessarily unpublished.</li>
       </ul>
       <div>
         <h3>Use it responsibly.</h3>
-        <p class="muted" style="margin:0">Scan software you own or are authorized to test, and report findings through the maintainers' security policy. GadgetHunter ships no exploit generator. Its evaluation oracles use harmless in-memory markers, never commands or network callbacks.</p>
+        <p class="muted" style="margin:0">GadgetHunter ships no exploit generator. Its evaluation oracles use harmless in-memory markers, never commands or network callbacks.</p>
       </div>
     </div>
   </div>
