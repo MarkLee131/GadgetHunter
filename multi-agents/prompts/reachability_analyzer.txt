@@ -34,6 +34,8 @@ Some tips for you to analyze the reachability of the call edge:
 - readObject() methods: Can trigger during deserialization even if not directly called
 - writeReplace()/readResolve(): Can be called during serialization/deserialization
 - Serializable classes: Constructor constraints may not apply during deserialization
+- Transient and static fields are not restored from the stream; they hold defaults unless a callback assigns them
+- Objects created inside a callback need not be Serializable; their state comes only from what the callback passes in
 </TIPS>
 </TASK>
 

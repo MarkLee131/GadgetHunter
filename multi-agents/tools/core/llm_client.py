@@ -286,7 +286,8 @@ class GPTClient(LLMClient):
     
     def __init__(self, config: Dict[str, Any], usage_tracker: Optional[APIUsageTracker] = None):
         super().__init__(config, usage_tracker)
-        openai.api_key = config["api_key"]
+        self.client = openai.OpenAI(api_key=config["api_key"], timeout=config.get("timeout", 60),
+                                    max_retries=config.get("max_retries", 2))
         self.reasoning_file = None 
     
     def set_reasoning_file(self, reasoning_file: str):
@@ -294,7 +295,7 @@ class GPTClient(LLMClient):
         self.reasoning_file = reasoning_file
     
     def _make_api_call(self, messages: list, **kwargs) -> Dict[str, Any]:
-        client = openai.OpenAI(api_key=self.config["api_key"])
+        client = self.client
         
         # Default parameters, can be overridden by kwargs
         params = {'model': self.model, 'messages': messages}
@@ -324,6 +325,8 @@ class DeepSeekClient(LLMClient):
         super().__init__(config, usage_tracker)
         self.api_key = config["api_key"]
         self.base_url = config["api_url"]
+        self.client = openai.OpenAI(api_key=self.api_key, base_url=self.base_url,
+                                    timeout=config.get("timeout", 60), max_retries=config.get("max_retries", 2))
         self.reasoning_file = None 
     
     def set_reasoning_file(self, reasoning_file: str):
@@ -331,7 +334,7 @@ class DeepSeekClient(LLMClient):
         self.reasoning_file = reasoning_file
     
     def _make_api_call(self, messages: list, **kwargs) -> Dict[str, Any]:
-        client = openai.OpenAI(api_key=self.api_key, base_url=self.base_url)
+        client = self.client
         
         # Default parameters, can be overridden by kwargs
         params = {'model': self.model, 'messages': messages}

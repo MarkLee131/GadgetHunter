@@ -342,7 +342,7 @@ def main():
     parser.add_argument('--csv', required=True, help='CSV report file path')
     parser.add_argument('--chains', required=True, help='Original chains file path')
     parser.add_argument('--verdict', required=True,
-                       choices=['FEASIBLE', 'NOT_FEASIBLE', 'NOT_REACHABLE', 'EARLY_STOP', 'ERROR'],
+                       choices=['FEASIBLE', 'NOT_FEASIBLE', 'NOT_REACHABLE', 'EARLY_STOP', 'UNKNOWN', 'ERROR'],
                        help='Verdict type to extract (FEASIBLE = SAT(Φ(π)), exploitable per paper §3.5)')
     parser.add_argument('--output', help='Output file path')
     

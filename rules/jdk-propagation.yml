@@ -1,0 +1,103 @@
+# Common JDK propagation and noise, safe to apply on any target.
+#
+# transfers: data moves through methods whose body Flash would otherwise analyze
+#   (or cannot analyze, e.g. native System.arraycopy). Every transfer here must
+#   be non-overridable; preparation refuses others, because a transfer replaces
+#   the callee and would hide a gadget override.
+# ignores: leaf calls whose result cannot carry taint. Preparation checks each
+#   one against the scanned classpath (closed world): it must return a primitive
+#   and never reach overridable code, invokedynamic or reference state. Refused
+#   rules are listed in the manifest, never applied.
+# Methods that call toString/hashCode/equals/compare on arguments are excluded:
+# those calls are deserialization triggers, not noise.
+sinks: []
+
+transfers:
+  # Strings and builders (final classes)
+  - {method: "<java.lang.String: void <init>(java.lang.String)>", from: 0, to: base}
+  - {method: "<java.lang.String: void <init>(char[])>", from: 0, to: base}
+  - {method: "<java.lang.String: void <init>(byte[])>", from: 0, to: base}
+  - {method: "<java.lang.String: void <init>(byte[],int,int)>", from: 0, to: base}
+  - {method: "<java.lang.String: void <init>(byte[],java.lang.String)>", from: 0, to: base}
+  - {method: "<java.lang.String: void <init>(byte[],java.nio.charset.Charset)>", from: 0, to: base}
+  - {method: "<java.lang.String: java.lang.String substring(int)>", from: base, to: result}
+  - {method: "<java.lang.String: java.lang.String substring(int,int)>", from: base, to: result}
+  - {method: "<java.lang.String: java.lang.String trim()>", from: base, to: result}
+  - {method: "<java.lang.String: java.lang.String toLowerCase()>", from: base, to: result}
+  - {method: "<java.lang.String: java.lang.String toUpperCase()>", from: base, to: result}
+  - {method: "<java.lang.String: java.lang.String toLowerCase(java.util.Locale)>", from: base, to: result}
+  - {method: "<java.lang.String: java.lang.String toUpperCase(java.util.Locale)>", from: base, to: result}
+  - {method: "<java.lang.String: java.lang.String replace(char,char)>", from: base, to: result}
+  - {method: "<java.lang.String: java.lang.String intern()>", from: base, to: result}
+  - {method: "<java.lang.String: java.lang.String[] split(java.lang.String)>", from: base, to: result}
+  - {method: "<java.lang.String: byte[] getBytes()>", from: base, to: result}
+  - {method: "<java.lang.String: byte[] getBytes(java.lang.String)>", from: base, to: result}
+  - {method: "<java.lang.String: byte[] getBytes(java.nio.charset.Charset)>", from: base, to: result}
+  - {method: "<java.lang.String: char[] toCharArray()>", from: base, to: result}
+  - {method: "<java.lang.String: java.lang.String valueOf(char[])>", from: 0, to: result}
+  - {method: "<java.lang.String: java.lang.String copyValueOf(char[])>", from: 0, to: result}
+  - {method: "<java.lang.StringBuilder: java.lang.StringBuilder append(char[])>", from: 0, to: base}
+  - {method: "<java.lang.StringBuilder: java.lang.StringBuilder append(char[])>", from: base, to: result}
+  - {method: "<java.lang.StringBuilder: java.lang.StringBuilder insert(int,java.lang.String)>", from: 1, to: base}
+  - {method: "<java.lang.StringBuilder: java.lang.StringBuilder reverse()>", from: base, to: result}
+  - {method: "<java.lang.StringBuffer: void <init>(java.lang.String)>", from: 0, to: base}
+  - {method: "<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.String)>", from: 0, to: base}
+  - {method: "<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.String)>", from: base, to: result}
+  - {method: "<java.lang.StringBuffer: java.lang.String toString()>", from: base, to: result}
+  # Arrays and natives Flash cannot see into
+  - {method: "<java.lang.System: void arraycopy(java.lang.Object,int,java.lang.Object,int,int)>", from: 0, to: 2}
+  - {method: "<java.lang.reflect.Array: java.lang.Object get(java.lang.Object,int)>", from: 0, to: result}
+  - {method: "<java.util.Arrays: byte[] copyOf(byte[],int)>", from: 0, to: result}
+  - {method: "<java.util.Arrays: byte[] copyOfRange(byte[],int,int)>", from: 0, to: result}
+  - {method: "<java.util.Arrays: char[] copyOf(char[],int)>", from: 0, to: result}
+  - {method: "<java.util.Arrays: java.lang.Object[] copyOf(java.lang.Object[],int)>", from: 0, to: result}
+  - {method: "<java.util.Arrays: java.util.List asList(java.lang.Object[])>", from: 0, to: result}
+  # Pass-through helpers
+  - {method: "<java.util.Objects: java.lang.Object requireNonNull(java.lang.Object)>", from: 0, to: result}
+  - {method: "<java.util.Objects: java.lang.Object requireNonNull(java.lang.Object,java.lang.String)>", from: 0, to: result}
+  - {method: "<java.util.Optional: java.util.Optional of(java.lang.Object)>", from: 0, to: result}
+  - {method: "<java.util.Optional: java.util.Optional ofNullable(java.lang.Object)>", from: 0, to: result}
+  - {method: "<java.util.Optional: java.lang.Object get()>", from: base, to: result}
+  - {method: "<java.util.Optional: java.lang.Object orElse(java.lang.Object)>", from: base, to: result}
+  - {method: "<java.util.Optional: java.lang.Object orElse(java.lang.Object)>", from: 0, to: result}
+  # Encodings that commonly wrap serialized payloads
+  - {method: "<java.util.Base64$Decoder: byte[] decode(java.lang.String)>", from: 0, to: result}
+  - {method: "<java.util.Base64$Decoder: byte[] decode(byte[])>", from: 0, to: result}
+  - {method: "<java.net.URLDecoder: java.lang.String decode(java.lang.String,java.lang.String)>", from: 0, to: result}
+  - {method: "<java.net.URLDecoder: java.lang.String decode(java.lang.String)>", from: 0, to: result}
+  # Stream wrappers: constructors are exact calls
+  - {method: "<java.io.InputStreamReader: void <init>(java.io.InputStream)>", from: 0, to: base}
+  - {method: "<java.io.InputStreamReader: void <init>(java.io.InputStream,java.lang.String)>", from: 0, to: base}
+  - {method: "<java.io.BufferedReader: void <init>(java.io.Reader)>", from: 0, to: base}
+  - {method: "<java.io.BufferedInputStream: void <init>(java.io.InputStream)>", from: 0, to: base}
+  - {method: "<java.io.DataInputStream: void <init>(java.io.InputStream)>", from: 0, to: base}
+  - {method: "<java.util.zip.GZIPInputStream: void <init>(java.io.InputStream)>", from: 0, to: base}
+  - {method: "<java.util.zip.InflaterInputStream: void <init>(java.io.InputStream)>", from: 0, to: base}
+
+imitates: []
+
+ignores:
+  - {method: "<java.lang.String: int length()>"}
+  - {method: "<java.lang.String: boolean isEmpty()>"}
+  - {method: "<java.lang.String: char charAt(int)>"}
+  - {method: "<java.lang.String: int hashCode()>"}
+  - {method: "<java.lang.String: boolean equals(java.lang.Object)>"}
+  - {method: "<java.lang.String: int compareTo(java.lang.String)>"}
+  - {method: "<java.lang.String: boolean startsWith(java.lang.String)>"}
+  - {method: "<java.lang.String: boolean startsWith(java.lang.String,int)>"}
+  - {method: "<java.lang.String: boolean endsWith(java.lang.String)>"}
+  - {method: "<java.lang.String: int indexOf(int)>"}
+  - {method: "<java.lang.String: int indexOf(java.lang.String)>"}
+  - {method: "<java.lang.String: int lastIndexOf(int)>"}
+  - {method: "<java.lang.StringBuilder: int length()>"}
+  - {method: "<java.lang.Integer: int intValue()>"}
+  - {method: "<java.lang.Long: long longValue()>"}
+  - {method: "<java.lang.Boolean: boolean booleanValue()>"}
+  - {method: "<java.lang.Math: int max(int,int)>"}
+  - {method: "<java.lang.Math: int min(int,int)>"}
+  - {method: "<java.lang.Math: long max(long,long)>"}
+  - {method: "<java.lang.Math: int abs(int)>"}
+  - {method: "<java.lang.System: long currentTimeMillis()>"}
+  - {method: "<java.lang.System: long nanoTime()>"}
+
+sanitizers: []

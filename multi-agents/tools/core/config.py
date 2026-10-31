@@ -16,7 +16,12 @@ class Config:
         self.llm_type = "gpt"
         self.llm_model = "gpt-4.1"
         self.llm_api_url = "https://api.openai.com/v1/chat/completions"
-        self.max_chains = 10
+        self.max_chains = 0
+        self.solver_timeout = 30
+        self.max_fix_attempts = 3
+        self.llm_timeout = 60
+        self.llm_max_retries = 2
+        self.llm_cache_size = 256
         self.output_dir = "results"
         self.debug = os.environ.get("DEBUG", "0") == "1"
         self.extract_javadoc = os.environ.get("EXTRACT_JAVADOC", "1") == "1"
@@ -29,7 +34,7 @@ class Config:
 
     def set_debug(self, debug_flag: bool):
         self.debug = debug_flag
-    
+
     def set_project_info(self, project_path: str = None, project_name: str = None):
         """Set project path and name"""
         if project_path:
@@ -57,40 +62,54 @@ class Config:
         elif self.llm_type == "deepseek":
             api_key = self.deepseek_api_key
             self.llm_api_url = "https://api.deepseek.com"
-        
+
         elif self.llm_type == "claude":
             api_key = self.anthropic_api_key
             self.llm_api_url = "https://api.anthropic.com/v1/messages"
-        
+
         else:
             raise ValueError(f"Unsupported LLM type: {self.llm_type}")
-        
+
         return {
             "api_key": api_key,
             "type": self.llm_type,
             "model": self.llm_model,
             "api_url": self.llm_api_url,
+            "timeout": self.llm_timeout,
+            "max_retries": self.llm_max_retries,
         }
 
     def get_joern_addr(self):
         return getattr(self, 'joern_addr', None)
 
 def load_config(path):
-    """Load config from a JSON file (optional, fallback to default Config)."""
-    if not os.path.exists(path):
-        return Config()
+    """Load validated runtime settings; credentials stay in environment variables."""
     with open(path, 'r', encoding='utf-8') as f:
         data = json.load(f)
     config = Config()
+    allowed = {"llm_type", "llm_model", "max_chains", "output_dir", "debug", "extract_javadoc",
+               "solver_timeout", "max_fix_attempts", "llm_timeout", "llm_max_retries", "llm_cache_size"}
+    if not isinstance(data, dict) or set(data) - allowed:
+        raise ValueError("Config must be an object containing supported settings only; supply API keys via environment")
     for k, v in data.items():
+        if type(v) is not type(getattr(config, k)):
+            raise ValueError(f"Invalid type for configuration setting {k}")
         setattr(config, k, v)
-    # Ensure extract_javadoc field exists
-    if not hasattr(config, 'extract_javadoc'):
-        config.extract_javadoc = True
+    for key in ("solver_timeout", "llm_timeout"):
+        if getattr(config, key) <= 0:
+            raise ValueError(f"{key} must be positive")
+    for key in ("max_chains", "max_fix_attempts", "llm_max_retries", "llm_cache_size"):
+        if getattr(config, key) < 0:
+            raise ValueError(f"{key} must be nonnegative")
+    if config.llm_type not in {"gpt", "deepseek"}:
+        raise ValueError("Supported CLI providers are gpt and deepseek")
     return config
 
 def create_default_config(path):
     """Create a default config file."""
     config = Config()
     with open(path, 'w', encoding='utf-8') as f:
-        json.dump(config.__dict__, f, ensure_ascii=False, indent=2) 
+        json.dump({key: getattr(config, key) for key in (
+            "llm_type", "llm_model", "max_chains", "output_dir", "debug", "extract_javadoc",
+            "solver_timeout", "max_fix_attempts", "llm_timeout", "llm_max_retries", "llm_cache_size",
+        )}, f, ensure_ascii=False, indent=2)

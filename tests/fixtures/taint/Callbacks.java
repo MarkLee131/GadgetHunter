@@ -1,0 +1,33 @@
+package fixtures;
+
+import java.io.*;
+
+// Metadata-only fixtures. The tests compile these classes but never instantiate them.
+public class Callbacks implements Serializable {
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+    }
+    private void readObjectNoData() { }
+    private Object readResolve() { return this; }
+    public String[][] arrays(int n, Object[] input) { return new String[n][]; }
+}
+
+class NotSerializable {
+    private void readObject(ObjectInputStream in) { }
+}
+
+class WrongHooks implements Serializable {
+    private static Object readResolve() { return null; }
+    public void readObjectNoData() { }
+    public void readExternal(ObjectInput in) { }
+}
+
+class ExternalCallbacks implements Externalizable {
+    public ExternalCallbacks() { }
+    public void readExternal(ObjectInput in) { }
+    public void writeExternal(ObjectOutput out) { }
+}
+
+class InheritedSerializable extends Callbacks {
+    private void readObjectNoData() { }
+}

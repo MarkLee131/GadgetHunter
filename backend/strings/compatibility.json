@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "backend_sha256": "58198673cb8292df044cde3d308d5da4f9e2df791a83b26a556cad6cfd061106",
+  "original_class_sha256": "a5a98f80a29630c935a0a89b366297d5750378cea9808d985077053bf7cdb4c4",
+  "upstream_revision": "458cdf58e255c8ba9631c2bf98f297be47c3717f",
+  "upstream_path": "src/main/java/pascal/taie/util/Strings.java",
+  "upstream_source_sha256": "4ced717bed7c776f9f2df4faceb1932ab268d6fc24d81aa699805038240e561f",
+  "license": "LGPL-3.0-or-later"
+}

@@ -2,7 +2,13 @@
 Semantic Reachability Agent
 """
 
+import re
+import hashlib
+import json
+from collections import OrderedDict
+
 from typing import Dict, Any, List, Optional
+from tools.analysis.outcomes import InconclusiveAnalysis
 from .base_agent import BaseAgent
 from tools.core import LLMClient
 from tools.java_extraction import JavaCodeExtractor
@@ -22,6 +28,32 @@ class SemanticReachabilityAgent(BaseAgent):
         super().__init__(llm_client, debug)
         # prompt_manager is now initialized in BaseAgent
         self.code_extractor = JavaCodeExtractor(project_root, debug)
+        self.response_cache = OrderedDict()
+        self.cache_size = 256
+        self.cache_hits = 0
+
+    def _ask_cached(self, prompt, system_prompt, validator, **kwargs):
+        """Reuse only validated responses to identical requests within this scan."""
+        key = hashlib.sha256(json.dumps({
+            "provider": self.llm_client.provider, "model": self.llm_client.model,
+            "defaults": self.llm_client.default_params, "prompt": prompt, "system": system_prompt,
+            "parameters": {k: v for k, v in kwargs.items() if k not in {"chain_id", "log_file_prefix"}},
+        }, sort_keys=True).encode()).hexdigest()
+        if key in self.response_cache:
+            self.cache_hits += 1
+            self.response_cache.move_to_end(key)
+            response, origin = self.response_cache[key]
+            return response, {"cache_hit": True, "cache_source_chain": origin}
+        response = self.llm_client.ask_with_logging(prompt, system_prompt=system_prompt, **kwargs)
+        if self.cache_size > 0 and validator(response):
+            self.response_cache[key] = (response, kwargs.get("chain_id"))
+            while len(self.response_cache) > self.cache_size:
+                self.response_cache.popitem(last=False)
+        return response, {"cache_hit": False}
+
+    def _valid_summary_response(self, response):
+        parsed = self._extract_json_from_response(response) if isinstance(response, str) else None
+        return isinstance(parsed, dict) and all(isinstance(parsed.get(k), list) for k in ("vars", "flow", "guard", "runtime"))
 
         
     def analyze_transitions(self, transitions: List[Dict[str, Any]], **kwargs) -> Dict[str, Any]:
@@ -185,58 +217,23 @@ class SemanticReachabilityAgent(BaseAgent):
     
     def _parse_reachability_response(self, response: str, context_info: str = "") -> Dict[str, Any]:
         """Parse LLM response for reachability analysis - simple REACHABLE|UNREACHABLE format"""
-        try:
-            response_clean = response.strip()
-            
-            if response_clean.startswith("REACHABLE"):
+        if isinstance(response, str):
+            # Accept a decision only, never keywords embedded in explanations.
+            match = re.fullmatch(r"(REACHABLE|UNREACHABLE)(?:\s*\((.*)\))?", response.strip(), re.S)
+            if match:
                 return {
-                    "reachable": True,
-                    "reasoning": "Method transition is reachable"
+                    "reachable": match[1] == "REACHABLE",
+                    "reasoning": match[2] or f"Method transition is {match[1].lower()}",
                 }
-            # deepseek response format: reasons and end at the last line with decision
+        return {"reachable": None, "reasoning": "Missing or ambiguous reachability decision"}
 
-            elif response_clean.startswith("UNREACHABLE") or response_clean.endswith("UNREACHABLE"):
-                # Extract reason in parentheses if provided
-                reasoning = "Method transition is unreachable"
-                if "(" in response_clean and ")" in response_clean:
-                    start_paren = response_clean.find("(")
-                    end_paren = response_clean.find(")", start_paren)
-                    if start_paren != -1 and end_paren != -1:
-                        reasoning = response_clean[start_paren + 1:end_paren].strip()
-                
-                return {
-                    "reachable": False,
-                    "reasoning": reasoning
-                }
-            # more robust check: check the keyword "UNREACHABLE" in the response
-            elif "UNREACHABLE" in response_clean:
-                return {
-                    "reachable": False,
-                    "reasoning": "Method transition is unreachable"
-                }
-            elif "REACHABLE" in response_clean:
-                return {
-                    "reachable": True,
-                    "reasoning": "Method transition is reachable"
-                }
+    @staticmethod
+    def _require_source(source_code):
+        if not isinstance(source_code, str) or not source_code.strip() or source_code.startswith(
+            ("Unavailable.", "Source code not available", "No code available", "// Failed", "// Error")
+        ):
+            raise InconclusiveAnalysis("Matching Java source is unavailable")
 
-            else:
-                # Conservative fallback for unexpected format
-                self.logger.warning(f"Unexpected response format{' for ' + context_info if context_info else ''}: {response_clean[:100]}")
-                return {
-                    "reachable": False,
-                    "reasoning": f"Unexpected response format: {response_clean[:100]}"
-                }
-                
-        except Exception as e:
-            self.logger.warning(f"Failed to parse response{' for ' + context_info if context_info else ''}: {e}")
-            return {
-                "reachable": False,
-                "reasoning": f"Failed to parse response: {e}"
-            }
-    
-
-    
     def generate_gadget_code_summary(self, gadget_info: Dict[str, Any]) -> Dict[str, Any]:
         """
         Generate code summary for a SINGLE GADGET (not region)
@@ -252,6 +249,8 @@ class SemanticReachabilityAgent(BaseAgent):
         # Get source code for this specific gadget
         source_code = self._get_source_code_from_gadget(gadget_info, fallback_to_extraction=True)
         
+        self._require_source(source_code)
+
         # Extract method signature
         if isinstance(gadget_info, dict):
             method_signature = gadget_info.get("method_signature", gadget_info.get("raw_gadget", "Unknown method"))
@@ -273,9 +272,10 @@ class SemanticReachabilityAgent(BaseAgent):
         
         # Call LLM with JSON format enforcement and logging - include chain_id for folder organization
         chain_id = gadget_info.get("chain_id")  # Extract chain_id from gadget_info
-        raw_response = self.llm_client.ask_with_logging(
+        raw_response, cache_info = self._ask_cached(
             prompt,
             system_prompt=system_prompt,
+            validator=self._valid_summary_response,
             log_file_prefix=f"gadget_code_summary_{gadget_id}",
             stage="code_summary_and_constraints",  # updated to the correct stage identifier
             chain_id=chain_id,
@@ -290,7 +290,8 @@ class SemanticReachabilityAgent(BaseAgent):
             "summary": summary,
             "method_signature": method_signature,
             "source_code": source_code,
-            "analysis_type": "gadget_code_summary"
+            "analysis_type": "gadget_code_summary",
+            **cache_info,
         }
     
     def generate_deserialization_audit(self, gadget_info: Dict[str, Any]) -> Dict[str, Any]:
@@ -433,6 +434,8 @@ class SemanticReachabilityAgent(BaseAgent):
             
             source_method_code = edge_info.get('source_method_code', 'Source code not available')
             
+            self._require_source(source_method_code)
+
             # construct method context, from raw call edge
             method_context = f"{call_edge}"
             
@@ -448,9 +451,10 @@ class SemanticReachabilityAgent(BaseAgent):
             system_prompt = self.prompt_manager.get_system_prompt("reachability_analyzer")
             
             # call LLM
-            response = self.llm_client.ask_with_logging(
+            response, cache_info = self._ask_cached(
                 prompt,
                 system_prompt=system_prompt,
+                validator=lambda response: self._parse_reachability_response(response)["reachable"] is not None,
                 log_file_prefix=f"region_edge_reachability_{edge_index}",
                 stage="semantic_reachability",  # updated to the correct stage identifier
                 chain_id=chain_id
@@ -460,18 +464,21 @@ class SemanticReachabilityAgent(BaseAgent):
             analysis_result = self._parse_reachability_response(response, f"region edge {edge_index}")
             
             # add early_stop decision
-            analysis_result["early_stop"] = not analysis_result.get("reachable", False)
+            analysis_result.update(cache_info)
+            analysis_result["early_stop"] = analysis_result.get("reachable") is False
             
             self.logger.info(f"Region edge {edge_index} reachability: {analysis_result.get('reachable', False)}")
             
             return analysis_result
             
+        except InconclusiveAnalysis as e:
+            return {"reachable": None, "early_stop": False, "reasoning": str(e)}
         except Exception as e:
             self.logger.error(f"Error analyzing region edge {edge_index} reachability: {e}")
             return {
-                "reachable": False,
+                "reachable": None,
                 "reasoning": f"Error in reachability analysis: {e}",
-                "early_stop": True,
+                "early_stop": False,
                 "error": str(e)
             }
 

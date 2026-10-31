@@ -6,6 +6,7 @@ summary.json  is the LLM-emitted micro-IR ({vars, flow, guard})
 """
 import json, sys
 from textwrap import dedent
+from tools.analysis.outcomes import InconclusiveAnalysis
 
 # ---------- utility for generating runtime code ----------
 def gen_var_init():
@@ -79,8 +80,8 @@ def generate_z3_script_from_json(j):
         Complete Z3 script as string
     """
     # Validate input
-    if not isinstance(j, dict):
-        j = {"vars": [], "flow": [], "guard": [], "runtime": []}
+    if not isinstance(j, dict) or any(not isinstance(j.get(key), list) for key in ("vars", "flow", "guard", "runtime")):
+        raise InconclusiveAnalysis("Expected vars, flow, guard, and runtime lists")
     
     out = ["from z3 import *", "", gen_var_init()]
     
@@ -116,7 +117,10 @@ def generate_z3_script_from_json(j):
             
             constraint_line = emit_var_constraint(var_name, var_constraint)
             out.append(constraint_line)
-            stats["vars_processed"] += 1
+            if constraint_line.startswith("# unknown"):
+                stats["vars_skipped"] += 1
+            else:
+                stats["vars_processed"] += 1
             
         except Exception as e:
             out.append(f"# error processing var {v}: {e}")
@@ -231,14 +235,16 @@ def generate_z3_script_from_json(j):
                f"guard({stats['guard_processed']}/{stats['guard_processed']+stats['guard_skipped']}), " +
                f"runtime({stats['runtime_processed']}/{stats['runtime_processed']+stats['runtime_skipped']})")
 
-    # Add enhanced solver check
-    out += ["", "print('Enhanced Z3 Result:', s.check())", "if s.check()==sat:",
-            "    m = s.model()", "    print('Logical Model:', m)",
-            "    print('Runtime Feasibility: POTENTIALLY_FEASIBLE')",
-            "    print('NOTE: Manual verification of runtime constraints recommended')",
-            "else:", "    print('Runtime Feasibility: NOT_FEASIBLE')",
-            "    print('Unsatisfiable core:', s.unsat_core())"]
-    
+    skipped = sum(value for key, value in stats.items() if key.endswith("_skipped"))
+    if skipped:
+        raise InconclusiveAnalysis(f"Translator cannot represent {skipped} constraint(s); refusing a partial formula")
+    if not any(line.startswith("s.add(") for line in out):
+        raise InconclusiveAnalysis("No constraints were emitted")
+    out += ["", "print('Constraint count:', len(s.assertions()))", "result = s.check()",
+            "print('Enhanced Z3 Result:', result)", "if result == sat:",
+            "    print('Logical Model:', s.model())", "elif result == unknown:",
+            "    print('Reason:', s.reason_unknown())"]
+
     return "\n".join(out)
 
 def process_guard_constraint(g, out):
@@ -407,15 +413,15 @@ def process_runtime_constraint(r, out):
                 src_type, dst_type = [p.strip() for p in inner.split(",", 1)]
                 src_type = sanitize_class_name(src_type)
                 dst_type = sanitize_class_name(dst_type)
-                out.append(f"# cast compatibility: {src_type} -> {dst_type}")
-                return True
+                out.append(f"# unsupported cast compatibility: {src_type} -> {dst_type}")
+                return False
             else:
                 out.append(f"# skipped malformed cast_compatible: {r}")
                 return False
                 
         elif r == "not_anonymous_class(obj)":
-            out.append(f"# runtime constraint: obj must be named class")
-            return True
+            out.append("# unsupported named-class constraint")
+            return False
             
         else:
             out.append(f"# unknown runtime constraint: {r}")

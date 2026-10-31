@@ -5,6 +5,7 @@ Utilities for parsing gadget chain files
 Original functions from: chain_utils.py
 """
 
+import re
 from typing import List
 
 
@@ -106,11 +107,11 @@ def validate_chain_file(chains_file: str) -> dict:
         invalid_edges = []
         for chain_idx, chain in enumerate(chains):
             for edge_idx, edge in enumerate(chain):
-                if '<' not in edge or '>' not in edge:
+                if not re.fullmatch(r'\[(?:STATIC|SPECIAL|VIRTUAL|INTERFACE|DYNAMIC)\]\s*<.+>\s*--\(line:-?\d+,\s*constraint:\[[^\]]*\]\)-->\s*<.+>', edge):
                     invalid_edges.append(f"Chain {chain_idx}, Edge {edge_idx}: {edge}")
         
         return {
-            'valid': True,
+            'valid': bool(chains) and not invalid_edges,
             'total_chains': total_chains,
             'total_edges': total_edges,
             'empty_chains': empty_chains,

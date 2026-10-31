@@ -1,0 +1,94 @@
+# Effects that still matter on patched runtimes, beyond native-core.
+# Combine with native-core. Library rules resolve only when that library is on
+# the classpath; absent owners are reported as unresolved, not as errors.
+# Each sink is an effect boundary with an effect family (see rules/triage.yml),
+# not an exploitability verdict. Parsing/construction propagates; the later
+# evaluation, connection or write is the boundary.
+sinks:
+  # ---- Class definition: controlled bytes become a class ----
+  - {method: "<java.lang.ClassLoader: java.lang.Class defineClass(java.lang.String,byte[],int,int)>", index: [1]}
+  - {method: "<java.lang.ClassLoader: java.lang.Class defineClass(java.lang.String,byte[],int,int,java.security.ProtectionDomain)>", index: [1]}
+  - {method: "<java.lang.ClassLoader: java.lang.Class defineClass(byte[],int,int)>", index: [0]}
+  - {method: "<java.security.SecureClassLoader: java.lang.Class defineClass(java.lang.String,byte[],int,int,java.security.CodeSource)>", index: [1]}
+  - {method: "<sun.misc.Unsafe: java.lang.Class defineClass(java.lang.String,byte[],int,int,java.lang.ClassLoader,java.security.ProtectionDomain)>", index: [1]}
+  - {method: "<sun.misc.Unsafe: java.lang.Class defineAnonymousClass(java.lang.Class,byte[],java.lang.Object[])>", index: [1]}
+  # Remote class loading needs a controlled URL list; loading is a separate event.
+  - {method: "<java.net.URLClassLoader: java.net.URLClassLoader newInstance(java.net.URL[])>", index: [0]}
+  - {method: "<java.net.URLClassLoader: java.net.URLClassLoader newInstance(java.net.URL[],java.lang.ClassLoader)>", index: [0]}
+  - {method: "<java.net.URLClassLoader: void <init>(java.net.URL[])>", index: [0]}
+  - {method: "<java.net.URLClassLoader: void <init>(java.net.URL[],java.lang.ClassLoader)>", index: [0]}
+  - {method: "<java.net.URLClassLoader: void <init>(java.net.URL[],java.lang.ClassLoader,java.net.URLStreamHandlerFactory)>", index: [0]}
+
+  # ---- Script and expression evaluation ----
+  - {method: "<javax.script.ScriptEngine: java.lang.Object eval(java.lang.String)>", index: [0]}
+  - {method: "<javax.script.ScriptEngine: java.lang.Object eval(java.io.Reader)>", index: [0]}
+  - {method: "<javax.el.ELProcessor: java.lang.Object eval(java.lang.String)>", index: [0]}
+  - {method: "<javax.el.ELProcessor: java.lang.Object getValue(java.lang.String,java.lang.Class)>", index: [0]}
+  - {method: "<javax.el.ValueExpression: java.lang.Object getValue(javax.el.ELContext)>", index: [base]}
+  - {method: "<javax.el.MethodExpression: java.lang.Object invoke(javax.el.ELContext,java.lang.Object[])>", index: [base]}
+  - {method: "<org.springframework.expression.Expression: java.lang.Object getValue()>", index: [base]}
+  - {method: "<org.springframework.expression.Expression: java.lang.Object getValue(java.lang.Object)>", index: [base]}
+  - {method: "<org.springframework.expression.Expression: java.lang.Object getValue(org.springframework.expression.EvaluationContext)>", index: [base]}
+  - {method: "<org.mvel2.MVEL: java.lang.Object eval(java.lang.String)>", index: [0]}
+  - {method: "<org.mvel2.MVEL: java.lang.Object executeExpression(java.lang.Object)>", index: [0]}
+  - {method: "<groovy.lang.GroovyShell: java.lang.Object evaluate(java.lang.String)>", index: [0]}
+  # Groovy compilation can run AST transformations before any evaluation.
+  - {method: "<groovy.lang.GroovyClassLoader: java.lang.Class parseClass(java.lang.String)>", index: [0]}
+
+  # ---- JDBC: attacker-chosen URL or data source configuration ----
+  - {method: "<java.sql.DriverManager: java.sql.Connection getConnection(java.lang.String)>", index: [0]}
+  - {method: "<java.sql.DriverManager: java.sql.Connection getConnection(java.lang.String,java.util.Properties)>", index: [0]}
+  - {method: "<java.sql.DriverManager: java.sql.Connection getConnection(java.lang.String,java.lang.String,java.lang.String)>", index: [0]}
+  - {method: "<java.sql.Driver: java.sql.Connection connect(java.lang.String,java.util.Properties)>", index: [0]}
+  - {method: "<javax.sql.DataSource: java.sql.Connection getConnection()>", index: [base]}
+
+  # ---- File effects: write is not read, and neither is code execution ----
+  - {method: "<java.io.FileOutputStream: void <init>(java.lang.String)>", index: [0]}
+  - {method: "<java.io.FileOutputStream: void <init>(java.lang.String,boolean)>", index: [0]}
+  - {method: "<java.io.FileOutputStream: void <init>(java.io.File)>", index: [0]}
+  - {method: "<java.io.FileOutputStream: void <init>(java.io.File,boolean)>", index: [0]}
+  - {method: "<java.io.FileWriter: void <init>(java.lang.String)>", index: [0]}
+  - {method: "<java.io.FileWriter: void <init>(java.io.File)>", index: [0]}
+  - {method: "<java.nio.file.Files: java.nio.file.Path write(java.nio.file.Path,byte[],java.nio.file.OpenOption[])>", index: [0]}
+  - {method: "<java.nio.file.Files: java.nio.file.Path copy(java.nio.file.Path,java.nio.file.Path,java.nio.file.CopyOption[])>", index: [1]}
+  - {method: "<java.io.File: boolean renameTo(java.io.File)>", index: [0]}
+  - {method: "<java.io.File: boolean delete()>", index: [base]}
+
+  # ---- Outbound network: SSRF and blind-confirmation probes ----
+  - {method: "<java.net.URL: java.net.URLConnection openConnection()>", index: [base]}
+  - {method: "<java.net.URL: java.io.InputStream openStream()>", index: [base]}
+  - {method: "<java.net.InetAddress: java.net.InetAddress getByName(java.lang.String)>", index: [0]}
+
+  # ---- Secondary deserializers: often outside the primary stream's filter ----
+  - {method: "<java.beans.XMLDecoder: java.lang.Object readObject()>", index: [base]}
+  - {method: "<com.thoughtworks.xstream.XStream: java.lang.Object fromXML(java.lang.String)>", index: [0]}
+  - {method: "<com.thoughtworks.xstream.XStream: java.lang.Object fromXML(java.io.Reader)>", index: [0]}
+  - {method: "<com.thoughtworks.xstream.XStream: java.lang.Object fromXML(java.io.InputStream)>", index: [0]}
+  - {method: "<org.yaml.snakeyaml.Yaml: java.lang.Object load(java.lang.String)>", index: [0]}
+  - {method: "<org.yaml.snakeyaml.Yaml: java.lang.Object load(java.io.Reader)>", index: [0]}
+  - {method: "<org.yaml.snakeyaml.Yaml: java.lang.Object load(java.io.InputStream)>", index: [0]}
+  - {method: "<com.caucho.hessian.io.AbstractHessianInput: java.lang.Object readObject()>", index: [base]}
+  - {method: "<com.alibaba.fastjson.JSON: java.lang.Object parse(java.lang.String)>", index: [0]}
+  - {method: "<com.alibaba.fastjson.JSON: com.alibaba.fastjson.JSONObject parseObject(java.lang.String)>", index: [0]}
+
+transfers:
+  - {method: "<java.io.StringReader: void <init>(java.lang.String)>", from: 0, to: base}
+  - {method: "<java.io.File: void <init>(java.lang.String)>", from: 0, to: base}
+  - {method: "<java.io.File: void <init>(java.lang.String,java.lang.String)>", from: 0, to: base}
+  - {method: "<java.io.File: void <init>(java.lang.String,java.lang.String)>", from: 1, to: base}
+  - {method: "<java.io.File: void <init>(java.io.File,java.lang.String)>", from: 0, to: base}
+  - {method: "<java.io.File: void <init>(java.io.File,java.lang.String)>", from: 1, to: base}
+  - {method: "<java.io.File: java.nio.file.Path toPath()>", from: base, to: result}
+  - {method: "<java.nio.file.Paths: java.nio.file.Path get(java.lang.String,java.lang.String[])>", from: 0, to: result}
+  - {method: "<java.net.URL: void <init>(java.lang.String)>", from: 0, to: base}
+  - {method: "<java.beans.XMLDecoder: void <init>(java.io.InputStream)>", from: 0, to: base}
+  - {method: "<javax.el.ExpressionFactory: javax.el.ValueExpression createValueExpression(javax.el.ELContext,java.lang.String,java.lang.Class)>", from: 1, to: result}
+  - {method: "<javax.el.ExpressionFactory: javax.el.MethodExpression createMethodExpression(javax.el.ELContext,java.lang.String,java.lang.Class,java.lang.Class[])>", from: 1, to: result}
+  - {method: "<org.springframework.expression.ExpressionParser: org.springframework.expression.Expression parseExpression(java.lang.String)>", from: 0, to: result}
+  - {method: "<org.mvel2.MVEL: java.io.Serializable compileExpression(java.lang.String)>", from: 0, to: result}
+  - {method: "<com.caucho.hessian.io.HessianInput: void <init>(java.io.InputStream)>", from: 0, to: base}
+  - {method: "<com.caucho.hessian.io.Hessian2Input: void <init>(java.io.InputStream)>", from: 0, to: base}
+
+imitates: []
+ignores: []
+sanitizers: []

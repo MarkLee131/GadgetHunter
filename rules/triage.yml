@@ -1,0 +1,182 @@
+# Review-priority catalog for candidate chains. It never removes a candidate.
+#
+# effects:     sink method -> effect family and review priority (3 highest).
+# families:    publicly documented gadget families. A chain that uses a "core"
+#              class is a rediscovery ("known"); "trigger" and "terminal"
+#              classes are reusable entry/effect gadgets that do not make a
+#              chain known, because a new middle segment can still be a 0day.
+# mitigations: evidence-backed reasons a route is dead or constrained on the
+#              scanned build. Prefer bytecode evidence from the target over
+#              version numbers; vendor backports and shading break version logic.
+#
+# Method keys are "owner.name" (all overloads). Class keys are exact names;
+# keys ending in "." are package prefixes.
+schema_version: 1
+
+effects:
+  - family: process-execution
+    priority: 3
+    methods: [java.lang.Runtime.exec, java.lang.ProcessBuilder.start]
+  - family: class-definition
+    priority: 3
+    methods: [java.lang.ClassLoader.defineClass, java.security.SecureClassLoader.defineClass,
+              sun.misc.Unsafe.defineClass, sun.misc.Unsafe.defineAnonymousClass,
+              java.net.URLClassLoader.newInstance, java.net.URLClassLoader.<init>, groovy.lang.GroovyClassLoader.parseClass]
+  - family: expression-evaluation
+    priority: 3
+    methods: [javax.script.ScriptEngine.eval, javax.el.ELProcessor.eval, javax.el.ELProcessor.getValue,
+              javax.el.ValueExpression.getValue, javax.el.MethodExpression.invoke,
+              org.springframework.expression.Expression.getValue, org.mvel2.MVEL.eval,
+              org.mvel2.MVEL.executeExpression, groovy.lang.GroovyShell.evaluate]
+  - family: jndi-lookup
+    priority: 2
+    methods: [javax.naming.Context.lookup, javax.naming.InitialContext.lookup]
+  - family: jdbc-connection
+    priority: 2
+    methods: [java.sql.DriverManager.getConnection, java.sql.Driver.connect, javax.sql.DataSource.getConnection]
+  - family: secondary-deserialization
+    priority: 2
+    methods: [java.io.ObjectInputStream.<init>, java.io.ObjectInputStream.readObject, java.io.ObjectInputStream.readUnshared,
+              java.io.ObjectInput.readObject, java.beans.XMLDecoder.readObject,
+              com.thoughtworks.xstream.XStream.fromXML, org.yaml.snakeyaml.Yaml.load,
+              com.caucho.hessian.io.AbstractHessianInput.readObject,
+              com.alibaba.fastjson.JSON.parse, com.alibaba.fastjson.JSON.parseObject]
+  - family: reflective-invocation
+    priority: 1
+    methods: [java.lang.reflect.Method.invoke, java.lang.reflect.Constructor.newInstance]
+  - family: file-write
+    priority: 1
+    methods: [java.io.FileOutputStream.<init>, java.io.FileWriter.<init>, java.nio.file.Files.write,
+              java.nio.file.Files.copy, java.io.File.renameTo]
+  - family: file-delete
+    priority: 0
+    methods: [java.io.File.delete]
+  - family: outbound-request
+    priority: 0
+    methods: [java.net.URL.openConnection, java.net.URL.openStream, java.net.InetAddress.getByName]
+
+families:
+  - id: commons-collections
+    source: https://github.com/frohoff/ysoserial
+    core: [org.apache.commons.collections.functors., org.apache.commons.collections4.functors.]
+    terminal: []
+    trigger: [org.apache.commons.collections.keyvalue.TiedMapEntry, org.apache.commons.collections4.keyvalue.TiedMapEntry]
+  - id: commons-beanutils
+    source: https://github.com/frohoff/ysoserial
+    core: [org.apache.commons.beanutils.BeanComparator]
+    # Getter invocation is the family's reusable primitive; a new route into it can still be new.
+    terminal: [org.apache.commons.beanutils.PropertyUtilsBean]
+  - id: spring-core
+    source: https://github.com/frohoff/ysoserial
+    core: [org.springframework.core.SerializableTypeWrapper$MethodInvokeTypeProvider,
+           org.springframework.aop.framework.JdkDynamicAopProxy]
+    trigger: [org.springframework.aop.target.HotSwappableTargetSource]
+  - id: groovy
+    source: https://github.com/frohoff/ysoserial
+    core: [org.codehaus.groovy.runtime.ConvertedClosure, org.codehaus.groovy.runtime.MethodClosure]
+  - id: hibernate
+    source: https://github.com/frohoff/ysoserial
+    core: [org.hibernate.property.BasicPropertyAccessor$BasicGetter,
+           org.hibernate.property.access.spi.GetterMethodImpl, org.hibernate.engine.spi.TypedValue]
+  - id: c3p0
+    source: https://github.com/frohoff/ysoserial
+    core: [com.mchange.v2.c3p0.impl.PoolBackedDataSourceBase, com.mchange.v2.naming.ReferenceIndirector$ReferenceSerialized]
+  - id: rome
+    source: https://github.com/frohoff/ysoserial
+    core: [com.sun.syndication.feed.impl.ToStringBean, com.sun.syndication.feed.impl.EqualsBean,
+           com.rometools.rome.feed.impl.ToStringBean, com.rometools.rome.feed.impl.EqualsBean]
+  - id: beanshell
+    source: https://github.com/frohoff/ysoserial
+    core: [bsh.XThis$Handler]
+  - id: json-lib
+    source: https://github.com/frohoff/ysoserial
+    core: [net.sf.json.JSONObject]
+  - id: rhino
+    source: https://github.com/frohoff/ysoserial
+    core: [org.mozilla.javascript.NativeError, org.mozilla.javascript.NativeJavaObject]
+  - id: myfaces
+    source: https://github.com/frohoff/ysoserial
+    core: [org.apache.myfaces.view.facelets.el.ValueExpressionMethodExpression]
+  - id: fileupload
+    source: https://github.com/frohoff/ysoserial
+    core: [org.apache.commons.fileupload.disk.DiskFileItem, org.apache.wicket.util.upload.DiskFileItem]
+  - id: jboss-interceptors
+    source: https://github.com/frohoff/ysoserial
+    core: [org.jboss.interceptor.proxy.InterceptorMethodHandler, org.jboss.weld.interceptor.proxy.InterceptorMethodHandler]
+  - id: vaadin
+    source: https://github.com/frohoff/ysoserial
+    core: [com.vaadin.data.util.NestedMethodProperty]
+  - id: click
+    source: https://github.com/frohoff/ysoserial
+    core: [org.apache.click.control.Column$ColumnComparator]
+  - id: jython
+    source: https://github.com/frohoff/ysoserial
+    core: [org.python.core.PyFunction, org.python.core.PyMethod]
+  - id: aspectjweaver
+    source: https://github.com/frohoff/ysoserial
+    core: [org.aspectj.weaver.tools.cache.SimpleCache$StoreableCachingMap]
+  - id: jdk-urldns
+    source: https://github.com/frohoff/ysoserial
+    core_methods: [java.net.URLStreamHandler.hashCode]
+  - id: jdk-7u21
+    source: https://github.com/frohoff/ysoserial
+    core_methods: [sun.reflect.annotation.AnnotationInvocationHandler.equalsImpl]
+  - id: jdk-jrmp-client
+    source: https://github.com/frohoff/ysoserial
+    core: [java.rmi.server.RemoteObjectInvocationHandler]
+  - id: jackson-pojonode
+    source: public research; Jackson node toString reaches bean getters
+    core: [com.fasterxml.jackson.databind.node.POJONode]
+  - id: fastjson-tostring
+    source: public research; fastjson JSON toString reaches bean getters
+    core_methods: [com.alibaba.fastjson.JSON.toString, com.alibaba.fastjson.JSON.toJSONString,
+                   com.alibaba.fastjson2.JSON.toJSONString]
+  # Reusable building blocks. A chain using only these can still be new.
+  - id: jdk-common-blocks
+    source: https://github.com/frohoff/ysoserial
+    trigger: [java.util.HashMap, java.util.Hashtable, java.util.PriorityQueue, java.util.TreeMap,
+              java.util.concurrent.ConcurrentHashMap, javax.management.BadAttributeValueExpException,
+              javax.swing.event.EventListenerList, com.sun.org.apache.xpath.internal.objects.XString,
+              sun.reflect.annotation.AnnotationInvocationHandler]
+    terminal: [com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl, com.sun.rowset.JdbcRowSetImpl]
+
+mitigations:
+  - id: jdk-aih-membervalues-rebuilt
+    status: blocked
+    summary: AnnotationInvocationHandler.readObject rebuilds memberValues as a fresh LinkedHashMap (JDK 8u71+), so invoke() no longer dispatches to an attacker-chosen map.
+    when: {edge_from: sun.reflect.annotation.AnnotationInvocationHandler.invoke, edge_to_name: get,
+           edge_to_not: [java.util.LinkedHashMap, java.util.HashMap]}
+    evidence: {calls: {method: sun.reflect.annotation.AnnotationInvocationHandler.readObject, target: java.io.ObjectInputStream.readFields}}
+  - id: jdk-aih-no-setvalue
+    status: blocked
+    summary: AnnotationInvocationHandler.readObject no longer calls Map.Entry.setValue on stream entries (JDK 8u71+).
+    when: {edge_from: sun.reflect.annotation.AnnotationInvocationHandler.readObject, edge_to_name: setValue}
+    evidence: {calls: {method: sun.reflect.annotation.AnnotationInvocationHandler.readObject, target: java.io.ObjectInputStream.readFields}}
+  - id: jdk-aih-annotation-type-check
+    status: blocked
+    summary: AnnotationInvocationHandler.readObject rejects non-annotation types (JDK 7u25+), so equalsImpl only reflects annotation members.
+    when: {methods: [sun.reflect.annotation.AnnotationInvocationHandler.equalsImpl]}
+    evidence: {calls: {method: sun.reflect.annotation.AnnotationInvocationHandler.readObject, target: sun.reflect.annotation.AnnotationType.getInstance}}
+  - id: commons-collections-unsafe-serialization
+    status: blocked
+    summary: Commons Collections 3.2.2 functors reject deserialization unless org.apache.commons.collections.enableUnsafeSerialization=true.
+    source: https://commons.apache.org/proper/commons-collections/security.html
+    when: {classes: [org.apache.commons.collections.functors.]}
+    evidence: {callback_calls: org.apache.commons.collections.functors.FunctorUtils.checkUnsafeSerialization}
+  - id: commons-collections4-not-serializable
+    status: blocked
+    summary: Commons Collections 4.1 removed Serializable from unsafe functors.
+    source: https://commons.apache.org/proper/commons-collections/security.html
+    when: {classes: [org.apache.commons.collections4.functors.]}
+    evidence: {not_serializable: true}
+  - id: groovy-methodclosure-resolve
+    status: blocked
+    summary: Groovy 2.4.4+ MethodClosure.readResolve throws unless org.codehaus.groovy.runtime.MethodClosure.ALLOW_RESOLVE is set (CVE-2015-3253).
+    when: {classes: [org.codehaus.groovy.runtime.MethodClosure]}
+    evidence: {declares: org.codehaus.groovy.runtime.MethodClosure.readResolve}
+  - id: jdk-jndi-remote-codebase
+    status: constrained
+    summary: JDK 8u121 (RMI) and 8u191 (LDAP) stop loading remote factory classes by default; a lookup needs a local ObjectFactory or serialized-object reply.
+    source: https://www.oracle.com/java/technologies/javase/8u191-relnotes.html
+    when: {effects: [jndi-lookup]}
+    evidence: {runtime_since: 8u191}

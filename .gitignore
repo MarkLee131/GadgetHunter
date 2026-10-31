@@ -36,3 +36,7 @@ __pycache__/
 .pytest_cache/
 
 .DS_Store
+
+# Local workbench jobs and uploaded source
+.gadgethunter/
+usage_stats/

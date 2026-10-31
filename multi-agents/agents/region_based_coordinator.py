@@ -9,6 +9,7 @@ import sys
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 from .base_agent import BaseAgent
+from tools.analysis.outcomes import InconclusiveAnalysis
 from .region_analyzer_agent import RegionAnalyzerAgent
 from .semantic_reachability_agent import SemanticReachabilityAgent
 from tools.core import LLMClient
@@ -53,6 +54,12 @@ class RegionBasedCoordinator(BaseAgent):
         self.semantic_agent = SemanticReachabilityAgent(llm_client, root_path, debug)
         self.path_constraint_agent = PathConstraintAgent(llm_client, debug, output_dir=output_dir)
         
+        self.semantic_agent.cache_size = getattr(config, "llm_cache_size", 256)
+        if config is not None:
+            self.region_analyzer.code_extractor.parser.extract_javadoc = config.extract_javadoc
+            self.semantic_agent.code_extractor.parser.extract_javadoc = config.extract_javadoc
+        self.path_constraint_agent.solver_timeout = getattr(config, "solver_timeout", 30)
+        self.path_constraint_agent.max_fix_attempts = getattr(config, "max_fix_attempts", 3)
         self.logger.info("Coordinator initialized with unified agents")
     
     def _setup_chain_output_directory(self, chain_id: int) -> str:
@@ -85,7 +92,7 @@ class RegionBasedCoordinator(BaseAgent):
         3. Code Summary and Constraint Extraction (paper §3.5.1)
         4. SMT Path Feasibility (paper §3.5.2)
         5. Generate Conclusion (verdict ∈ {FEASIBLE, NOT_FEASIBLE, EARLY_STOP,
-           ERROR}; FEASIBLE means SAT(Φ(π)), i.e. exploitable per paper §3.5).
+           UNKNOWN, ERROR}; FEASIBLE means SAT(Φ(π)), i.e. exploitable per paper §3.5).
         """
         start_time = time.time()
         
@@ -136,13 +143,19 @@ class RegionBasedCoordinator(BaseAgent):
             semantic_reachability_start_usage = self.llm_client.get_usage_summary()
             semantic_reachability_start_cost = semantic_reachability_start_usage.total_cost_usd
             
+            semantic_results = []
             for i, edge_info in enumerate(region_edges):
                 self.logger.info(f"Analyzing region edge {i}: {edge_info['transition_type']}")
                 
                 reachability_result = self.semantic_agent.analyze_region_edge_reachability(edge_info, i, chain_id)
                 
-                # Check early stopping condition
-                if not reachability_result.get('reachable', True) or reachability_result.get('early_stop', False):
+                semantic_results.append({"edge_index": i, **reachability_result})
+                if reachability_result.get("error"):
+                    raise RuntimeError(reachability_result["error"])
+                if reachability_result.get("reachable") is None:
+                    raise InconclusiveAnalysis(reachability_result.get("reasoning", "Reachability is unknown"))
+                # Only an explicit negative decision can prune the chain.
+                if reachability_result.get('reachable') is False:
                     self.logger.info(f"Early stopping at region edge {i}: {reachability_result.get('reasoning', 'Unreachable')}")
                     early_stop_result = self._create_early_stop_result(chain_id, chain, region_analysis, edge_info, i, reachability_result, time.time() - start_time)
                     
@@ -234,7 +247,7 @@ class RegionBasedCoordinator(BaseAgent):
                 chain_id=chain_id,
                 original_chain=chain,
                 region_analysis=region_analysis,
-                semantic_analysis={"early_stopping_used": True, "reachability_validated": True},
+                semantic_analysis={"early_stopping_used": True, "reachability_validated": True, "edges": semantic_results},
                 feasibility_analysis=feasibility_analysis,
                 conclusion=conclusion,
                 analysis_time=analysis_time
@@ -266,6 +279,23 @@ class RegionBasedCoordinator(BaseAgent):
             
             return result
             
+        except InconclusiveAnalysis as e:
+            result = AnalysisResult(
+                chain_id, chain, locals().get("region_analysis", {}),
+                {"reachability_validated": False, "reason": str(e), "edges": locals().get("semantic_results", [])}, {},
+                {"verdict": "UNKNOWN", "reasoning": str(e)}, time.time() - start_time,
+            )
+            if self.global_tracker:
+                usage = self.llm_client.get_usage_summary()
+                self.global_tracker.complete_chain_analysis(
+                    chain_id, {"conclusion": result.conclusion},
+                    {"prompt_tokens": usage.total_prompt_tokens - initial_tokens["prompt_tokens"],
+                     "completion_tokens": usage.total_completion_tokens - initial_tokens["completion_tokens"],
+                     "total_tokens": usage.total_tokens - initial_tokens["total_tokens"]},
+                    usage.total_cost_usd - initial_cost,
+                )
+            return result
+
         except Exception as e:
             self.logger.error(f"Error in early-stopping analysis for chain {chain_id}: {e}")
             analysis_time = time.time() - start_time
@@ -319,45 +349,22 @@ class RegionBasedCoordinator(BaseAgent):
     def _generate_conclusion(self, region_analysis: Dict[str, Any], 
                            feasibility_analysis: Dict[str, Any]) -> Dict[str, Any]:
         """Generate conclusion based on semantic reachability (Step 2) and constraint feasibility (Step 4)"""
-        try:
-            # Semantic reachability already validated in Step 2 (if we reach here, all region edges are reachable)
-            semantic_reachable = True
-            semantic_score = "All region edges validated"
-            
-            # Check constraint feasibility
-            is_feasible = feasibility_analysis.get("is_feasible", False)
-            solver_status = feasibility_analysis.get("solver_status", "UNKNOWN")
-            constraint_count = feasibility_analysis.get("constraint_count", 0)
-            
-            # Verdict from SMT only: FEASIBLE iff SAT(Φ(π)), i.e. exploitable
-            # under paper §3.5's definition.
-            if not is_feasible:
-                verdict = "NOT_FEASIBLE"
-                reasoning = f"Chain reached the constraint phase but Φ(π) is unsatisfiable (solver: {solver_status}, {constraint_count} constraints)"
-            else:
-                verdict = "FEASIBLE"
-                reasoning = f"SAT(Φ(π)) holds — chain is exploitable per paper §3.5 (solver: {solver_status}, {constraint_count} constraints)"
-            
-            return {
-                "verdict": verdict,
-                "reasoning": reasoning,
-                "semantic_reachable": semantic_reachable,
-                "semantic_score": semantic_score,
-                "feasible": is_feasible,
-                "solver_status": solver_status,
-                "constraint_count": constraint_count
-            }
-            
-        except Exception as e:
-            self.logger.error(f"Error generating conclusion: {e}")
-            return {
-                "verdict": "ERROR",
-                "reasoning": f"Error generating conclusion: {e}",
-                "semantic_reachable": False,
-                "semantic_score": "Error",
-                "feasible": False,
-                "solver_status": "ERROR"
-            }
+        status = str(feasibility_analysis.get("solver_status", "unknown")).lower()
+        verdict, reasoning = {
+            "sat": ("FEASIBLE", "The extracted constraints are satisfiable; payload execution is not verified."),
+            "unsat": ("NOT_FEASIBLE", "The extracted constraints are unsatisfiable."),
+            "unknown": ("UNKNOWN", "The solver could not establish feasibility."),
+            "error": ("ERROR", "Constraint analysis failed."),
+        }.get(status, ("UNKNOWN", "No recognized solver result."))
+        detail = feasibility_analysis.get("error_message")
+        return {
+            "verdict": verdict,
+            "reasoning": f"{reasoning} {detail}" if detail else reasoning,
+            "semantic_reachable": True,
+            "feasible": True if status == "sat" else False if status == "unsat" else None,
+            "solver_status": status,
+            "constraint_count": feasibility_analysis.get("constraint_count", 0),
+        }
 
     def batch_analyze_chains_with_early_stopping(self, chains: List[List[str]], max_chains: int = 10) -> List[AnalysisResult]:
         """Analyze multiple chains in batch with early stopping"""
@@ -401,7 +408,7 @@ class RegionBasedCoordinator(BaseAgent):
     def get_analysis_summary(self, results: List[AnalysisResult]) -> Dict[str, Any]:
         """Aggregate per-chain verdicts into batch-level statistics."""
         total_chains = len(results)
-        successful_chains = len([r for r in results if not r.error])
+        successful_chains = len([r for r in results if r.conclusion.get("verdict") not in {"ERROR", "UNKNOWN"}])
         feasible_chains = len([r for r in results if r.conclusion.get("verdict") == "FEASIBLE"])
 
         verdict_counts: Dict[str, int] = {}
@@ -505,9 +512,10 @@ class RegionBasedCoordinator(BaseAgent):
                     gadget["code_summary"] = code_summary
                     total_summaries += 1
                     self.logger.info(f"Code summary for gadget {gadget_id}")
+                except InconclusiveAnalysis as e:
+                    gadget["code_summary"] = {"inconclusive": str(e)}
                 except Exception as e:
-                    self.logger.warning(f"Code summary failed for gadget {gadget_id}: {e}")
-                    gadget["code_summary"] = {"error": str(e)}
+                    raise RuntimeError(f"Code summary failed for gadget {gadget_id}: {e}") from e
 
         # Update metadata  
         region_analysis["analysis_metadata"]["gadget_summaries"] = total_summaries

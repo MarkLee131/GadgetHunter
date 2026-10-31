@@ -1,0 +1,51 @@
+# Initial Java-native profile. These are candidate boundaries, not RCE verdicts.
+# Runtime/API preconditions and rule categories are documented in docs/adaptive-taint-design.md.
+# Keep the Gleipner benchmark profile separate from this reusable profile.
+sinks:
+  - {method: "<java.lang.Runtime: java.lang.Process exec(java.lang.String)>", index: [0]}
+  - {method: "<java.lang.Runtime: java.lang.Process exec(java.lang.String,java.lang.String[])>", index: [0]}
+  - {method: "<java.lang.Runtime: java.lang.Process exec(java.lang.String,java.lang.String[],java.io.File)>", index: [0]}
+  - {method: "<java.lang.Runtime: java.lang.Process exec(java.lang.String[])>", index: [0]}
+  - {method: "<java.lang.Runtime: java.lang.Process exec(java.lang.String[],java.lang.String[])>", index: [0]}
+  - {method: "<java.lang.Runtime: java.lang.Process exec(java.lang.String[],java.lang.String[],java.io.File)>", index: [0]}
+  - {method: "<java.lang.ProcessBuilder: java.lang.Process start()>", index: [base]}
+  - {method: "<javax.naming.Context: java.lang.Object lookup(java.lang.String)>", index: [0]}
+  - {method: "<javax.naming.Context: java.lang.Object lookup(javax.naming.Name)>", index: [0]}
+  - {method: "<javax.naming.InitialContext: java.lang.Object lookup(java.lang.String)>", index: [0]}
+  - {method: "<javax.naming.InitialContext: java.lang.Object lookup(javax.naming.Name)>", index: [0]}
+  # A new stream over controlled data is a secondary deserialization point, which an
+  # application-level filter on the original stream does not cover (SignedObject-style).
+  # The callback's own stream is not constructed here, so its nested reads still propagate.
+  - {method: "<java.io.ObjectInputStream: void <init>(java.io.InputStream)>", index: [0]}
+
+transfers:
+  - {method: "<java.io.ByteArrayInputStream: void <init>(byte[])>", from: 0, to: base}
+  - {method: "<java.io.ByteArrayInputStream: void <init>(byte[],int,int)>", from: 0, to: base}
+  # A nested read returns an attacker-chosen object. Modeling it as a transfer lets
+  # the search follow calls the callback makes on that object (hashCode, compare,
+  # getObject...). As a sink, the read ended the path and those triggers were lost.
+  - {method: "<java.io.ObjectInputStream: java.lang.Object readObject()>", from: base, to: result}
+  - {method: "<java.io.ObjectInputStream: java.lang.Object readUnshared()>", from: base, to: result}
+  - {method: "<java.io.ObjectInput: java.lang.Object readObject()>", from: base, to: result}
+  - {method: "<java.io.ObjectInputStream: java.io.ObjectInputStream$GetField readFields()>", from: base, to: result}
+  - {method: "<java.io.ObjectInputStream$GetField: java.lang.Object get(java.lang.String,java.lang.Object)>", from: base, to: result}
+  - {method: "<java.lang.ProcessBuilder: void <init>(java.lang.String[])>", from: 0, to: base}
+  - {method: "<java.lang.ProcessBuilder: void <init>(java.util.List)>", from: 0, to: base}
+  - {method: "<java.lang.ProcessBuilder: java.lang.ProcessBuilder command(java.lang.String[])>", from: 0, to: base}
+  - {method: "<java.lang.ProcessBuilder: java.lang.ProcessBuilder command(java.util.List)>", from: 0, to: base}
+  - {method: "<java.lang.ProcessBuilder: java.lang.ProcessBuilder command(java.lang.String[])>", from: base, to: result}
+  - {method: "<java.lang.ProcessBuilder: java.lang.ProcessBuilder command(java.util.List)>", from: base, to: result}
+  - {method: "<java.lang.String: java.lang.String concat(java.lang.String)>", from: base, to: result}
+  - {method: "<java.lang.String: java.lang.String concat(java.lang.String)>", from: 0, to: result}
+  - {method: "<java.lang.StringBuilder: void <init>(java.lang.String)>", from: 0, to: base}
+  - {method: "<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.String)>", from: 0, to: base}
+  - {method: "<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.String)>", from: 0, to: result}
+  - {method: "<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.String)>", from: base, to: result}
+  - {method: "<java.lang.StringBuilder: java.lang.String toString()>", from: base, to: result}
+  - {method: "<java.util.Iterator: java.lang.Object next()>", from: base, to: result}
+  - {method: "<java.util.Enumeration: java.lang.Object nextElement()>", from: base, to: result}
+
+imitates: []
+# Do not suppress whole JDK/framework packages or treat filter installation as cleansing.
+ignores: []
+sanitizers: []

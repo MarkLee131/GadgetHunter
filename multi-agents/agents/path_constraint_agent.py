@@ -4,11 +4,15 @@ Z3-based constraint solving and path feasibility verification
 """
 
 import time
+import os
+import re
+import sys
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, field
 from enum import Enum
 
 from .base_agent import BaseAgent
+from tools.analysis.outcomes import InconclusiveAnalysis
 from tools.core import LLMClient
 
 
@@ -81,6 +85,7 @@ class PathConstraintAgent(BaseAgent):
         super().__init__(llm_client, debug)
         # prompt_manager is now initialized in BaseAgent
         self.max_fix_attempts = 3
+        self.solver_timeout = 30
         self.output_dir = output_dir
         
     def verify_path_feasibility(self, region_analysis: Dict[str, Any], 
@@ -111,6 +116,9 @@ class PathConstraintAgent(BaseAgent):
             result.json_constraints = json_constraints
             return result
             
+        except InconclusiveAnalysis as e:
+            return PathFeasibilityResult(chain_id, Z3SolverStatus.UNKNOWN, False, error_message=str(e),
+                                         json_constraints=locals().get("json_constraints", {}))
         except Exception as e:
             self.logger.error(f"Error verifying path feasibility: {e}")
             return self._build_error_result(chain_id, e)
@@ -134,8 +142,9 @@ class PathConstraintAgent(BaseAgent):
             is_feasible=solver_result.get("status") == "sat",
             z3_model=solver_result.get("model"),
             execution_time=execution_time,
-            constraint_count=0,  # Using code summaries, not complex constraints
-            z3_script=z3_script,
+            constraint_count=solver_result.get("constraint_count", 0),
+            error_message=solver_result.get("error"),
+            z3_script=solver_result.get("final_script", z3_script),
             fix_attempts=solver_result.get("fix_attempts", 0),
             constraints=[]
         )
@@ -166,68 +175,39 @@ class PathConstraintAgent(BaseAgent):
         """Execute Z3 script and return results."""
         import tempfile
         import subprocess
-        import time
-        
+
+        start_time = time.monotonic()
         try:
-            start_time = time.time()
-            
-            # Write Z3 script to temporary file
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-                f.write(z3_script)
-                temp_script_path = f.name
-            
-            # Execute script
-            result = subprocess.run(
-                ['python', temp_script_path], 
-                capture_output=True, 
-                text=True, 
-                timeout=30
-            )
-            
-            execution_time = time.time() - start_time
-            
-            # Parse output
+            with tempfile.TemporaryDirectory(prefix="gadgethunter-z3-") as temp_dir:
+                script = os.path.join(temp_dir, "constraints.py")
+                with open(script, "w", encoding="utf-8") as handle:
+                    handle.write(z3_script)
+                result = subprocess.run(
+                    [sys.executable, script], capture_output=True, text=True,
+                    timeout=self.solver_timeout,
+                )
             output = result.stdout.strip()
-            
-            # Extract status
-            status = "unknown"
-            if "Result: sat" in output:
-                status = "sat"
-            elif "Result: unsat" in output:
-                status = "unsat"
-            
-            # Extract model if available
-            model = None
-            if status == "sat" and "Model:" in output:
-                model_start = output.find("Model:")
-                model = output[model_start:] if model_start != -1 else None
-            
-            # Clean up
-            import os
-            os.unlink(temp_script_path)
-            
+            statuses = re.findall(r"^(?:Enhanced Z3 )?Result: (sat|unsat|unknown)$", output, re.M)
+            status = statuses[0] if len(statuses) == 1 else "error"
+            error = None
+            if result.returncode != 0:
+                status, error = "error", result.stderr.strip() or f"Solver exited with {result.returncode}"
+            elif status == "error":
+                error = "Missing or ambiguous solver status"
+            count = re.search(r"^Constraint count: (\d+)$", output, re.M)
+            model = re.search(r"^(?:Logical )?Model: ([\s\S]*)", output, re.M)
             return {
-                "status": status,
-                "model": model,
-                "execution_time": execution_time,
-                "stdout": output,
-                "stderr": result.stderr,
-                "return_code": result.returncode
+                "status": status, "model": model[1] if model and status == "sat" else None,
+                "constraint_count": int(count[1]) if count else 0,
+                "error": error, "execution_time": time.monotonic() - start_time,
+                "stdout": output, "stderr": result.stderr, "return_code": result.returncode,
             }
-            
         except subprocess.TimeoutExpired:
-            return {
-                "status": "error",
-                "error": "Z3 execution timed out (30s)",
-                "execution_time": 30.0
-            }
+            return {"status": "unknown", "error": f"Solver timed out after {self.solver_timeout}s",
+                    "timed_out": True, "execution_time": time.monotonic() - start_time}
         except Exception as e:
-            return {
-                "status": "error",
-                "error": str(e),
-                "execution_time": 0.0
-            }
-    
+            return {"status": "error", "error": str(e), "execution_time": time.monotonic() - start_time}
+
     def _execute_z3_with_fixing(self, z3_script: str, chain_id: int) -> Dict[str, Any]:
         """Execute Z3 script with iterative LLM-based fixing"""
         current_script = z3_script
@@ -239,8 +219,8 @@ class PathConstraintAgent(BaseAgent):
             # Execute current script
             result = self._execute_z3_solver(current_script)
             
-            # If successful, return result
-            if result.get("return_code") == 0 and result.get("status") != "error":
+            # Unknown and timeout are not script defects; do not spend API calls repairing them.
+            if result.get("status") == "unknown" or (result.get("return_code") == 0 and result.get("status") != "error"):
                 result["final_script"] = current_script
                 result["fix_attempts"] = fix_attempts
                 
@@ -609,82 +589,35 @@ class PathConstraintAgent(BaseAgent):
             "runtime": []
         }
         
-        regions = region_analysis.get("regions", [])
-        
-        # Extract constraints from each gadget
-        for region in regions:
-            gadgets = region.get("gadgets", [])
-            for gadget in gadgets:
-                if isinstance(gadget, dict):
-                    # Extract constraints from code summary
-                    code_summary = gadget.get("code_summary", {})
-                    if code_summary and not code_summary.get("error"):
-                        self._extract_constraints_from_summary(code_summary, json_data)
-        
-        # Add inter-gadget flow constraints
+        gadgets = [g for r in region_analysis.get("regions", []) for g in r.get("gadgets", [])]
+        if not gadgets:
+            raise InconclusiveAnalysis("No gadgets were extracted from the chain")
+        for gadget in gadgets:
+            summary = gadget.get("code_summary") if isinstance(gadget, dict) else None
+            if summary and summary.get("error"):
+                raise RuntimeError(summary["error"])
+            if not summary or summary.get("inconclusive"):
+                raise InconclusiveAnalysis((summary or {}).get("inconclusive", "A gadget has no usable constraint summary"))
+            self._extract_constraints_from_summary(summary, json_data)
+        if not any(json_data.values()):
+            raise InconclusiveAnalysis("No constraints were extracted from gadget summaries")
         self._add_inter_gadget_flows(region_analysis, json_data)
-        
         return json_data
-    
-    def _extract_constraints_from_summary(self, code_summary: Dict[str, Any], json_data: Dict[str, Any]):
-        """Extract constraints from code summary with robust parsing"""
-        try:
-            # Extract the summary - defend against type errors like Linus would
-            summary = code_summary.get("summary", "")
-            
-            # Type safety check - never trust incoming data
-            if not isinstance(summary, str):
-                self.logger.error(f"Expected string summary, got {type(summary)}. Skipping constraint extraction.")
-                return
-                
-            summary_str = summary.strip()
-            if not summary_str:
-                self.logger.warning("Empty summary string")
-                return
-            
-            self.logger.debug(f"Attempting to parse constraints from summary: {summary_str[:200]}...")
-            
-            # Use the robust JSON parser from base class
-            constraints = self._extract_json_from_response(summary_str)
-            
-            if constraints is None:
-                self.logger.warning("Failed to parse constraints with robust parser, trying fallback strategies")
-                # Fallback: try to extract constraints using pattern matching
-                constraints = self._extract_constraints_with_patterns(summary_str)
-            
-            if constraints is None:
-                self.logger.warning("All parsing strategies failed for constraints")
-                self.logger.debug(f"Failed summary content: {summary_str}")
-                return
-            
-            self.logger.debug(f"Successfully parsed constraints: {constraints}")
-            
-            # Validate and merge constraints into json_data
-            merged_count = 0
-            if isinstance(constraints, dict):
-                for key in ["vars", "flow", "guard", "runtime"]:
-                    if key in constraints:
-                        if isinstance(constraints[key], list):
-                            # Validate each constraint before adding
-                            valid_constraints = self._validate_constraints(constraints[key], key)
-                            json_data[key].extend(valid_constraints)
-                            merged_count += len(valid_constraints)
-                            self.logger.debug(f"Added {len(valid_constraints)} valid {key} constraints")
-                        else:
-                            self.logger.warning(f"Constraint {key} is not a list: {type(constraints[key])}")
-            else:
-                self.logger.warning(f"Constraints is not a dict: {type(constraints)}")
-            
-            if merged_count > 0:
-                self.logger.info(f"Successfully merged {merged_count} constraints from gadget summary")
-            else:
-                self.logger.warning("No valid constraints found in gadget summary")
-                        
-        except Exception as e:
-            self.logger.warning(f"Failed to extract constraints from summary: {e}")
-            self.logger.debug(f"Summary content: {code_summary.get('summary', '')}")
-            # Continue without constraints from this gadget - don't fail the entire analysis
-    
+
+    def _extract_constraints_from_summary(self, code_summary, json_data):
+        summary = code_summary.get("summary")
+        constraints = self._extract_json_from_response(summary) if isinstance(summary, str) else None
+        if not isinstance(constraints, dict):
+            raise InconclusiveAnalysis("Constraint summary is not a JSON object")
+        for key in ("vars", "flow", "guard", "runtime"):
+            values = constraints.get(key)
+            if not isinstance(values, list):
+                raise InconclusiveAnalysis(f"Constraint summary requires a {key} list")
+            for value in values:
+                if not self._is_valid_constraint(value, key):
+                    raise InconclusiveAnalysis(f"Unsupported {key} constraint: {value!r}")
+            json_data[key].extend(values)
+
     def _extract_constraints_with_patterns(self, text: str) -> Optional[Dict[str, Any]]:
         """
         Fallback constraint extraction using pattern matching
@@ -998,6 +931,8 @@ class PathConstraintAgent(BaseAgent):
             self.logger.info("Successfully generated Z3 script using external template")
             return z3_script
             
+        except InconclusiveAnalysis:
+            raise
         except (ImportError, ModuleNotFoundError) as e:
             # Template loading failed - this is a setup issue
             self.logger.error(f"Failed to load Z3 template module: {e}")

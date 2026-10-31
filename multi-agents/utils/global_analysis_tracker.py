@@ -25,6 +25,7 @@ class ExploitabilityVerdict(Enum):
     FEASIBLE = "FEASIBLE"               # SAT(Φ(π)) holds — exploitable
     NOT_FEASIBLE = "NOT_FEASIBLE"       # UNSAT(Φ(π)) — solver pruned
     EARLY_STOP = "EARLY_STOP"           # Stage-2 early-stop (unreachable region edge)
+    UNKNOWN = "UNKNOWN"                 # insufficient evidence or solver timeout
     ERROR = "ERROR"                     # analysis error
 
 @dataclass
@@ -76,6 +77,7 @@ class GlobalAnalysisSummary:
     # Verdict statistics — paper §3.5 terminology
     feasible_chains: int = 0             # SAT(Φ(π)) — exploitable
     not_feasible_chains: int = 0         # UNSAT(Φ(π))
+    unknown_chains: int = 0
     early_stop_chains: int = 0           # Stage-2 early-stop pruning
 
     total_duration_hours: float = 0.0
@@ -497,6 +499,8 @@ class GlobalAnalysisTracker:
                 summary.not_feasible_chains += 1
             elif record.verdict == ExploitabilityVerdict.EARLY_STOP:
                 summary.early_stop_chains += 1
+            elif record.verdict == ExploitabilityVerdict.UNKNOWN:
+                summary.unknown_chains += 1
 
             # Resource usage only counts real runs (not rebuilt records)
             if record.start_time != "rebuilt":
@@ -526,6 +530,7 @@ class GlobalAnalysisTracker:
         if summary.completed_chains > 0:
             print(f"  🎯 FEASIBLE (SAT(Φ(π))): {summary.feasible_chains}")
             print(f"  ❌ NOT_FEASIBLE: {summary.not_feasible_chains}")
+            print(f"  ? UNKNOWN: {summary.unknown_chains}")
             print(f"  ⚡ EARLY_STOP: {summary.early_stop_chains}")
             print(f"  💰 Total cost: ${summary.total_cost_usd:.4f}")
 
@@ -601,6 +606,7 @@ class GlobalAnalysisTracker:
         print(f"📊 Detailed statistics (paper §3.5 verdict):")
         print(f"  🎯 FEASIBLE (SAT(Φ(π)) — exploitable): {summary.feasible_chains} ({summary.exploitability_rate:.1f}%)")
         print(f"  ❌ NOT_FEASIBLE: {summary.not_feasible_chains}")
+        print(f"  ? UNKNOWN: {summary.unknown_chains}")
         print(f"  ⚡ EARLY_STOP: {summary.early_stop_chains}")
 
         # Only show time and cost for non-rebuilt data

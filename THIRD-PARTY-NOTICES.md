@@ -8,6 +8,10 @@ bundles third-party components, several of which are copyleft-licensed. **The Ap
 `LICENSE` does not apply to, and does not relicense, anything inside that jar.** Each bundled
 component remains under its own license.
 
+`backend/strings/src/pascal/taie/util/Strings.java` is also an exception to the repository's Apache license. It is a modified Flash/Tai-e helper under **LGPL-3.0-or-later**, with its original copyright and license header retained. Its complete source, upstream revision, changes and build procedure are included in [`backend/strings/`](backend/strings/README.md). Generated per-scan `backend-overlay.jar` files contain that helper; the bundled `flash.jar` remains unchanged.
+
+The Java sources in [`backend/fair/`](backend/fair/README.md) are also **LGPL-3.0-or-later**. This optional collector adapter changes traversal scheduling and reports internal search budgets while delegating checks and emission to the bundled collector. Its full source and build procedure are included. When selected, its classes and analysis registry are added to the per-scan overlay; they do not modify the bundled JAR.
+
 ## What the jar is, and what we changed
 
 The jar is a modified build of **Flash** (Yiheng Zhang, Ming Wen, Shunjie Liu, Dongjie He, and Hai

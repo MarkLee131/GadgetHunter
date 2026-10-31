@@ -1,0 +1,31 @@
+# Controlled reflection selection, not a proven invocation target or RCE.
+# Alternative to reflection-dispatch: the backend cannot lower both roles on
+# the same Method.invoke / Constructor.newInstance method without shadowing.
+# Coarse receiver/value taint does not prove type control or call feasibility.
+sinks:
+  - {method: "<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>", index: [base]}
+  - {method: "<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>", index: [base]}
+transfers:
+  - {method: "<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>", from: base, to: result}
+  - {method: "<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>", from: 0, to: result}
+  - {method: "<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>", from: 1, to: result}
+  - {method: "<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>", from: base, to: result}
+  - {method: "<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>", from: 0, to: result}
+  - {method: "<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>", from: 1, to: result}
+  - {method: "<java.lang.Class: java.lang.reflect.Constructor getConstructor(java.lang.Class[])>", from: base, to: result}
+  - {method: "<java.lang.Class: java.lang.reflect.Constructor getConstructor(java.lang.Class[])>", from: 0, to: result}
+  - {method: "<java.lang.Class: java.lang.reflect.Constructor getDeclaredConstructor(java.lang.Class[])>", from: base, to: result}
+  - {method: "<java.lang.Class: java.lang.reflect.Constructor getDeclaredConstructor(java.lang.Class[])>", from: 0, to: result}
+  - {method: "<java.lang.Class: java.lang.Class forName(java.lang.String)>", from: 0, to: result}
+  - {method: "<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>", from: 0, to: result}
+  - {method: "<java.lang.Object: java.lang.Class getClass()>", from: base, to: result}
+  # Bean introspection selects a getter/setter from a controlled class; property
+  # utilities (Commons Beanutils, Spring BeanWrapper) reach Method.invoke this way.
+  - {method: "<java.beans.Introspector: java.beans.BeanInfo getBeanInfo(java.lang.Class)>", from: 0, to: result}
+  - {method: "<java.beans.Introspector: java.beans.BeanInfo getBeanInfo(java.lang.Class,java.lang.Class)>", from: 0, to: result}
+  - {method: "<java.beans.BeanInfo: java.beans.PropertyDescriptor[] getPropertyDescriptors()>", from: base, to: result}
+  - {method: "<java.beans.PropertyDescriptor: java.lang.reflect.Method getReadMethod()>", from: base, to: result}
+  - {method: "<java.beans.PropertyDescriptor: java.lang.reflect.Method getWriteMethod()>", from: base, to: result}
+imitates: []
+ignores: []
+sanitizers: []

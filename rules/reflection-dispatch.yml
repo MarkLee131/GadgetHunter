@@ -1,0 +1,12 @@
+# Optional Flash dispatch approximation. It does not prove the chosen target is callable.
+sinks: []
+transfers:
+  - {method: "<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>", from: 0, to: result}
+  - {method: "<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>", from: 0, to: result}
+  - {method: "<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>", from: base, to: result}
+  - {method: "<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>", from: base, to: result}
+imitates:
+  - {method: "<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>", action: connect, jump: inference, fromIdx: base, recIdx: 0, paramIdx: 1}
+  - {method: "<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>", action: connect, jump: constructor, fromIdx: base, paramIdx: 0}
+ignores: []
+sanitizers: []
