@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +44,11 @@ public final class FairCollector implements Plugin {
     private final Method propagate, filter, sanitize, types, simplify, stringify, dedup, emit;
     private final List<SinkWork> sinks = new ArrayList<>();
     private final Map<JMethod, Integer> callbackDistance = new HashMap<>();
+    // Shared by every sink, edge and depth pass: whether a caller state can reach an
+    // accepted source path does not depend on the sink below it.
+    private final BackwardSearch.DeadEnds<JMethod, List<Integer>> deadEnds = new BackwardSearch.DeadEnds<>();
+    private final Set<Edge> shortcuts = new HashSet<>();
+    private long graphChanges;
     private long lastSnapshot;
     private long collectionStarted;
     private final ObjectMapper mapper = new ObjectMapper();
@@ -122,8 +128,8 @@ public final class FairCollector implements Plugin {
                 public boolean source(JMethod method) { return method.isSource(); }
                 public List<Integer> propagate(List<Integer> input, Edge e) { return transfer(input, e); }
                 public List<Edge> incoming(JMethod method) { return FairCollector.this.incoming(method); }
-                public void found(List<Edge> path) { accept(sink, path); }
-            }, sink.method, edge, taint, GCCollectorAfterProcess.MAX_LEN);
+                public int found(List<Edge> path) { return accept(sink, path); }
+            }, sink.method, edge, taint, GCCollectorAfterProcess.MAX_LEN, deadEnds);
         }
     }
 
@@ -131,7 +137,7 @@ public final class FairCollector implements Plugin {
         final JMethod method;
         final Deque<EdgeWork> pending = new ArrayDeque<>();
         int incomingEdges, controllableEdges, scheduledEdges, finishedEdges, exhaustedEdges, found;
-        long edgeBudgetNanos, activeNanos, steps, cyclePrunes, taintPrunes, depthPrunes;
+        long edgeBudgetNanos, activeNanos, steps, cyclePrunes, taintPrunes, depthPrunes, deadEndPrunes;
         long filterPrunes, sanitizerPrunes, typePrunes, similarityPrunes;
         long firstCandidateNanos = -1;
         SinkWork(JMethod method) {
@@ -167,6 +173,7 @@ public final class FairCollector implements Plugin {
                 cyclePrunes += work.search.cyclePrunes();
                 taintPrunes += work.search.taintPrunes();
                 depthPrunes += work.search.depthPrunes();
+                deadEndPrunes += work.search.deadEndPrunes();
             } else if (work.search.passFinished()) {
                 // Rotate at depth-pass boundaries: parked passes have no live
                 // frames, so later incoming edges get a short-path opportunity
@@ -176,18 +183,42 @@ public final class FairCollector implements Plugin {
         }
     }
 
-    private void accept(SinkWork sink, List<Edge> path) {
-        if ((boolean) call(filter, path)) { sink.filterPrunes++; return; }
-        if ((boolean) call(sanitize, path)) { sink.sanitizerPrunes++; return; }
-        if (!(boolean) call(types, path)) { sink.typePrunes++; return; }
+    /**
+     * The backend's type check walks the chain forward from the source and decides each edge
+     * from the edges before it, so rejecting a source-side prefix rejects every chain that ends
+     * with it. Returns the first backward-path index whose caller state is not rejected that way.
+     */
+    private int rejectedPrefixStart(List<Edge> path) {
+        int low = 1, high = path.size(); // the whole path is rejected
+        while (low < high) {
+            int middle = (low + high) >>> 1;
+            if (!(boolean) call(types, path.subList(path.size() - middle, path.size()))) high = middle;
+            else low = middle + 1;
+        }
+        return path.size() - low;
+    }
+
+    private int accept(SinkWork sink, List<Edge> path) {
+        if ((boolean) call(filter, path)) { sink.filterPrunes++; return 0; }
+        if ((boolean) call(sanitize, path)) { sink.sanitizerPrunes++; return 0; }
+        if (!(boolean) call(types, path)) { sink.typePrunes++; return rejectedPrefixStart(path); }
         List<Edge> simple = (List<Edge>) call(simplify, path);
+        // Simplification adds a shortcut edge when it shortens a chain. A new edge can add
+        // paths below recorded states, so they expire; most shortcuts were added before.
+        if (simple.size() < path.size()) {
+            Set<Edge> original = new HashSet<>(path);
+            boolean added = false;
+            for (Edge edge : simple) if (!original.contains(edge) && shortcuts.add(edge)) added = true;
+            if (added) { deadEnds.invalidate(); graphChanges++; }
+        }
         List<String> text = (List<String>) call(stringify, simple);
-        if (!(boolean) call(dedup, text)) { sink.similarityPrunes++; return; }
+        if (!(boolean) call(dedup, text)) { sink.similarityPrunes++; return 0; }
         if (chains.add(text)) {
             call(emit, simple);
             sink.found++;
             if (sink.firstCandidateNanos < 0) sink.firstCandidateNanos = System.nanoTime() - collectionStarted;
         }
+        return 0;
     }
 
     private void snapshot(String status, boolean force) {
@@ -199,6 +230,9 @@ public final class FairCollector implements Plugin {
         report.put("strategy", "round-robin-v1");
         report.put("edge_order", "callback-distance-v1");
         report.put("depth_strategy", "round-robin-deepening-v1");
+        report.put("dead_end_memo", "typed-prefix-v1");
+        report.put("dead_end_states", deadEnds.size());
+        report.put("graph_changes", graphChanges);
         report.put("distance_index_methods", callbackDistance.size());
         report.put("status", status);
         report.put("candidate_count", chains.size());
@@ -225,6 +259,7 @@ public final class FairCollector implements Plugin {
             item.put("cycle_prunes", sink.cyclePrunes);
             item.put("taint_prunes", sink.taintPrunes);
             item.put("depth_prunes", sink.depthPrunes);
+            item.put("dead_end_prunes", sink.deadEndPrunes);
             item.put("caller_filter_prunes", sink.filterPrunes);
             item.put("sanitizer_prunes", sink.sanitizerPrunes);
             item.put("type_prunes", sink.typePrunes);

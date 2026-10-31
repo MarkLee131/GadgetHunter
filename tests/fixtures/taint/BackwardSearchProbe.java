@@ -35,26 +35,37 @@ public class BackwardSearchProbe {
         return result;
     }
 
-    static Set<List<Integer>> suspended(List<Edge> edges, int limit, int quantum, boolean deepen) {
+    // Typed variant: an edge with id % 5 == 4 rejects every chain containing it, the way a
+    // type check that walks forward from the source rejects every extension of a bad prefix.
+    static boolean rejects(Edge edge) { return edge.id % 5 == 4; }
+
+    static Set<List<Integer>> suspended(List<Edge> edges, int limit, int quantum, boolean deepen, boolean memo, boolean typed) {
         Set<List<Integer>> result = new HashSet<>();
         BackwardSearch.Graph<Integer, Edge, Integer> graph = new BackwardSearch.Graph<>() {
             public Integer caller(Edge edge) { return edge.from; }
             public boolean source(Integer node) { return node == 5; }
             public Integer propagate(Integer input, Edge edge) { return (input & edge.mask) == 0 ? null : input & edge.mask; }
             public List<Edge> incoming(Integer node) { return edges.stream().filter(e -> e.to == node).toList(); }
-            public void found(List<Edge> path) { result.add(path.stream().map(Edge::id).toList()); }
+            public int found(List<Edge> path) {
+                int rejected = -1;
+                for (int i = 0; i < path.size(); i++) if (typed && rejects(path.get(i))) rejected = i;
+                if (rejected < 0) result.add(path.stream().map(Edge::id).toList());
+                return Math.max(rejected, 0); // the source-side rejected prefix starts below this index
+            }
         };
+        // One memo shared by all cursors, as in the collector.
+        BackwardSearch.DeadEnds<Integer, Integer> deadEnds = memo ? new BackwardSearch.DeadEnds<>() : null;
         Deque<Cursor> cursors = new ArrayDeque<>();
         for (Edge edge : edges) if (edge.to == 0) {
             if (deepen) {
-                var search = new DeepeningSearch<>(graph, 0, edge, 3, limit);
+                var search = new DeepeningSearch<>(graph, 0, edge, 3, limit, deadEnds);
                 cursors.add(new Cursor() {
                     public boolean done() { return search.done(); }
                     public void step() { search.step(); }
                     public boolean passFinished() { return search.passFinished(); }
                 });
             } else {
-                var search = new BackwardSearch<>(graph, 0, edge, 3, limit);
+                var search = new BackwardSearch<>(graph, 0, edge, 3, limit, deadEnds);
                 cursors.add(new Cursor() {
                     public boolean done() { return search.done(); }
                     public void step() { search.step(); }
@@ -92,13 +103,15 @@ public class BackwardSearchProbe {
             edges.add(new Edge(2, 0, 2, 6));
             for (int i = 0; i < 12; i++) edges.add(new Edge(random.nextInt(6), random.nextInt(5), random.nextInt(4), edges.size()));
             for (int limit = 1; limit <= 6; limit++) {
-                Set<List<Integer>> expected = enumerate(edges, limit);
-                for (int quantum : new int[]{1, 2, 64}) {
-                    for (boolean deepen : new boolean[]{false, true}) {
-                        if (!expected.equals(suspended(edges, limit, quantum, deepen))) throw new AssertionError("Lost or invented path, sample=" + sample);
+                Set<List<Integer>> all = enumerate(edges, limit);
+                Set<List<Integer>> accepted = new HashSet<>();
+                for (List<Integer> ids : all) if (ids.stream().noneMatch(id -> rejects(edges.get(id)))) accepted.add(ids);
+                for (int quantum : new int[]{1, 2, 64}) for (boolean deepen : new boolean[]{false, true})
+                    for (boolean memo : new boolean[]{false, true}) for (boolean typed : new boolean[]{false, true}) {
+                        if (!(typed ? accepted : all).equals(suspended(edges, limit, quantum, deepen, memo, typed)))
+                            throw new AssertionError("Lost or invented path, sample=" + sample + " memo=" + memo + " typed=" + typed);
                         cases++;
                     }
-                }
             }
         }
         System.out.println("BACKWARD_SEARCH_OK cases=" + cases);

@@ -74,4 +74,4 @@ class CollectorJournalTests(unittest.TestCase):
                             str(ROOT / 'tests/fixtures/taint/BackwardSearchProbe.java')], check=True, capture_output=True)
             result = subprocess.run(['java', '-cp', temporary, 'BackwardSearchProbe'],
                                     check=True, capture_output=True, text=True, timeout=20)
-            self.assertIn('BACKWARD_SEARCH_OK cases=3600', result.stdout)
+            self.assertIn('BACKWARD_SEARCH_OK cases=14400', result.stdout)
