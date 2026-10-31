@@ -2,6 +2,8 @@
 
 GadgetHunter: Region-Based Neuro-symbolic Detection of Java Deserialization Vulnerabilities
 
+> This branch is the FSE 2026 artifact for reproducing the paper. For the actively developed scanner (no handwritten taint configuration, candidate triage, Spring Boot and WAR inputs, a local web workbench), use the [`modern-scanning`](https://github.com/MarkLee131/GadgetHunter/tree/modern-scanning) branch.
+
 ## Paper
 
 > Kaixuan Li, Jian Zhang, Chong Wang, Sen Chen, Zong Cao, Min Zhang, Yang Liu.
