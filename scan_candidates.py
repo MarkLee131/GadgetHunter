@@ -17,7 +17,8 @@ def main():
     inputs.add_argument("--app", action="append")
     inputs.add_argument("--prepared", help="Run an existing, unscanned preparation (including enhance_scan.py output)")
     parser.add_argument("--lib", action="append", default=[])
-    parser.add_argument("--java8-home")
+    parser.add_argument("--java-home")
+    parser.add_argument("--java8-home", help="Deprecated alias for --java-home")
     parser.add_argument("--output", help="Fresh directory for configuration, progress and candidates")
     parser.add_argument("--profile", action="append", choices=("auto", *PROFILES), help="Default auto: chosen from the target bytecode")
     parser.add_argument("--timeout", type=int, default=300, help="Backend wall-time limit in seconds")
@@ -29,14 +30,15 @@ def main():
     args = parser.parse_args()
     if args.timeout <= 0 or args.heap_mb < 256 or args.stack_mb < 1:
         parser.error("Use a positive timeout, heap >= 256 MiB, and stack >= 1 MiB.")
-    if args.prepared and (args.lib or args.profile or args.java8_home or args.output):
-        parser.error("--prepared uses its existing configuration; omit --lib, --profile, --java8-home and --output.")
-    if args.app and (not args.java8_home or not args.output):
-        parser.error("--app requires --java8-home and --output.")
+    java_home = args.java_home or args.java8_home
+    if args.prepared and (args.lib or args.profile or java_home or args.output):
+        parser.error("--prepared uses its existing configuration; omit --lib, --profile, --java-home and --output.")
+    if args.app and (not java_home or not args.output):
+        parser.error("--app requires --java-home and --output.")
     try:
         if args.app:
             print("Preparing target classpath and native-deserialization rules…", flush=True)
-            prepare(args.app, args.lib, args.java8_home, args.output, args.profile or ["auto"])
+            prepare(args.app, args.lib, java_home, args.output, args.profile or ["auto"])
         folder = args.prepared or args.output
         print(f"Searching candidates. Progress: {Path(folder).absolute() / 'stage1.json'}", flush=True)
         report = run_backend(folder, timeout=args.timeout, heap_mb=args.heap_mb,

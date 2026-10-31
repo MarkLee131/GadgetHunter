@@ -59,7 +59,7 @@ class CandidateWorkbenchTests(unittest.TestCase):
                 jobs.submit_candidates(dict(self.payload(), enhancement='llm'))
         disabled = Jobs(self.folder / 'disabled')
         self.addCleanup(disabled.close)
-        with self.assertRaisesRegex(ValueError, 'java8-home'):
+        with self.assertRaisesRegex(ValueError, 'java-home'):
             disabled.submit_candidates(self.payload())
 
     def test_upload_validation_and_queue_limits_leave_no_partial_jobs(self):

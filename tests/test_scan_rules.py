@@ -124,7 +124,7 @@ class InventoryTests(unittest.TestCase):
         archive = self.root / "newer.jar"
         with zipfile.ZipFile(archive, "w") as out:
             out.writestr("fixtures/Callbacks.class", data[:6] + b"\x00\x3d" + data[8:])
-        with self.assertRaisesRegex(ValueError, "Java 8"):
+        with self.assertRaisesRegex(ValueError, "newer than the target runtime"):
             inventory([archive])
 
     def test_duplicate_classes_and_nested_jars_are_explicit_errors(self):

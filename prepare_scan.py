@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import shutil
 import zipfile
 from pathlib import Path
@@ -19,6 +20,7 @@ from scan_rules.archives import normalize
 from scan_rules.boundaries import derive_stream_boundaries
 from scan_rules.coverage import coverage_gaps, select_profiles, target_calls
 from scan_rules.inventory import inventory, native_entries, proxy_entries
+from scan_rules.runtime import resolve_runtime
 from scan_rules.purity import Checker, ignore_reason
 
 ROOT = Path(__file__).resolve().parent
@@ -110,7 +112,7 @@ def compile_profiles(profiles, classes):
     if checker:
         checker.close()
     if not compiled["sinks"]:
-        raise ValueError("No resolved sink methods; include native-core and the target Java 8 runtime")
+        raise ValueError("No resolved sink methods; include native-core and the target runtime")
     sinks = {rule["method"] for rule in compiled["sinks"]}
     overrides = {rule["method"] for section in ("transfers", "imitates") for rule in compiled[section]}
     if shadowed := sinks & overrides:
@@ -137,12 +139,8 @@ def prepare(apps, libraries, java_home, output, profiles, proxy_roots_enabled=Fa
     apps = [Path(p).expanduser().resolve(strict=True) for p in apps]
     libraries = [Path(p).expanduser().resolve(strict=True) for p in libraries]
     java_home = Path(java_home).expanduser().resolve(strict=True)
-    runtime_dir = java_home / "jre" / "lib"
-    if not runtime_dir.is_dir():
-        runtime_dir = java_home / "lib"
-    if not (runtime_dir / "rt.jar").is_file():
-        raise ValueError("--java8-home must contain jre/lib/rt.jar or lib/rt.jar; modular JDKs are not supported yet")
-    runtime = sorted(runtime_dir.glob("*.jar"))
+    cache_dir = Path(os.environ.get("GADGETHUNTER_RUNTIME_CACHE", Path.home() / ".cache" / "gadgethunter" / "runtimes"))
+    runtime, feature, max_major, version = resolve_runtime(java_home, cache_dir)
     paths = runtime + apps + libraries
     if len(set(paths)) != len(paths):
         raise ValueError("Repeated classpath entries")
@@ -151,17 +149,17 @@ def prepare(apps, libraries, java_home, output, profiles, proxy_roots_enabled=Fa
         raise ValueError(f"Output already exists; choose a fresh directory: {output}")
     output.mkdir(parents=True, exist_ok=False)
     try:
-        return prepare_into(output, apps, libraries, runtime, runtime_dir, java_home, profiles, proxy_roots_enabled)
+        return prepare_into(output, apps, libraries, runtime, feature, max_major, version, java_home, profiles, proxy_roots_enabled)
     except BaseException:
         shutil.rmtree(output)
         raise
 
 
-def prepare_into(output, apps, libraries, runtime, runtime_dir, java_home, profiles, proxy_roots_enabled=False):
+def prepare_into(output, apps, libraries, runtime, feature, max_major, version, java_home, profiles, proxy_roots_enabled=False):
     # Fat JAR, WAR and multi-release inputs become ordinary JARs under output/classpath.
-    apps, libraries, archives = normalize(apps, libraries, runtime, output / "classpath")
-    classes = inventory(runtime)
-    targets = inventory(apps + libraries, include_code=True)
+    apps, libraries, archives = normalize(apps, libraries, runtime, output / "classpath", max_major)
+    classes = inventory(runtime, max_major=max_major)
+    targets = inventory(apps + libraries, include_code=True, max_major=max_major)
     classes.update(targets)
     calls, callers = target_calls(targets)
     selection = None
@@ -194,7 +192,7 @@ def prepare_into(output, apps, libraries, runtime, runtime_dir, java_home, profi
                          if name and name not in classes})
     manifest = {
         "schema_version": 1, "status": "prepared-not-scanned", "protocol": "jdk-native",
-        "target_java": 8, "target_runtime_version": runtime_version(runtime_dir), "java_home": str(java_home), "profiles": digests,
+        "target_java": feature, "target_runtime_version": version, "java_home": str(java_home), "profiles": digests,
         "backend_sha256": hashlib.sha256((ROOT / "multi-agents/flash/flash.jar").read_bytes()).hexdigest(),
         "class_count": len(classes), "application_class_count": app_class_count,
         "inventory_sha256": hashlib.sha256(json.dumps(sorted((c.name, c.digest) for c in classes.values())).encode()).hexdigest(),
@@ -207,7 +205,7 @@ def prepare_into(output, apps, libraries, runtime, runtime_dir, java_home, profi
         "derived_boundaries": [{"method": rule["method"], "index": rule["index"], "effect": "secondary-deserialization",
                                 "evidence": "parameter passed into new ObjectInputStream"} for rule in derived],
         "limitations": [
-            "Experimental Java 8 native profile; metadata resolution is not a data-flow correctness proof.",
+            "Native deserialization profile; metadata resolution is not a data-flow correctness proof.",
             "This baseline has no adaptive rules; framework boundary, guard and exploit verification are not implemented.",
             "Receiver summaries are coarse; ProcessBuilder state and nested reads need path-specific review.",
             "Missing method bodies, unresolved types and Flash budget exhaustion can reduce coverage.",
@@ -215,7 +213,7 @@ def prepare_into(output, apps, libraries, runtime, runtime_dir, java_home, profi
         ],
     }
     if archives["dropped_newer_bytecode"]:
-        manifest["limitations"].append(f"{archives['dropped_newer_bytecode']} classes need a newer runtime than Java 8 and were not scanned.")
+        manifest["limitations"].append(f"{archives['dropped_newer_bytecode']} classes are newer than the target runtime (Java {feature}) and were not scanned.")
     if archives["shadowed_duplicates"]:
         manifest["limitations"].append(f"{archives['shadowed_duplicates']} duplicate classes were shadowed by an earlier classpath entry.")
     if 'reflection-boundaries' in profiles:
@@ -225,7 +223,7 @@ def prepare_into(output, apps, libraries, runtime, runtime_dir, java_home, profi
             'Object.getClass receiver taint can overapproximate actual type control.')
     config = {
         "classPath": [str(p) for p in libraries], "appClassPath": [str(p) for p in apps],
-        "inputClasses": input_classes, "javaVersion": 8, "prependJVM": False, "allowPhantom": True,
+        "inputClasses": input_classes, "javaVersion": feature, "prependJVM": False, "allowPhantom": True,
         "worldBuilderClass": "pascal.taie.frontend.soot.SootWorldBuilder",
         "outputDir": str(output / "output"), "preBuildIR": False, "worldCacheMode": False,
         "scope": "ALL", "nativeModel": True, "planFile": None,
@@ -238,7 +236,7 @@ def prepare_into(output, apps, libraries, runtime, runtime_dir, java_home, profi
         "keepResult": ["$KEEP-ALL"],
     }
     # Flash locates its target runtime relative to the configuration's directory.
-    runtime_layout = output / "java-benchmarks/JREs/jre1.8"
+    runtime_layout = output / f"java-benchmarks/JREs/jre1.{feature}"
     runtime_layout.mkdir(parents=True)
     for jar in runtime:
         (runtime_layout / jar.name).symlink_to(jar)
@@ -252,14 +250,16 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--app", action="append", required=True, help="Application JAR or class directory; repeatable")
     parser.add_argument("--lib", action="append", default=[], help="Dependency JAR or class directory; repeatable")
-    parser.add_argument("--java8-home", required=True, help="Java 8 target runtime (separate from the JVM running Flash)")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--java-home", help="Target JDK home (any version; separate from the JVM running Flash)")
+    group.add_argument("--java8-home", help="Deprecated alias for --java-home")
     parser.add_argument("--output", required=True, help="New preparation directory")
     parser.add_argument("--proxy-roots", action="store_true", help="Add Serializable InvocationHandler.invoke methods as dynamic-proxy dispatch roots (experimental)")
     parser.add_argument("--profile", action="append", choices=("auto", *PROFILES),
                         help="Repeatable; default 'auto' selects profiles from the target bytecode")
     args = parser.parse_args()
     try:
-        manifest = prepare(args.app, args.lib, args.java8_home, args.output, args.profile or ["auto"], args.proxy_roots)
+        manifest = prepare(args.app, args.lib, args.java_home or args.java8_home, args.output, args.profile or ["auto"], args.proxy_roots)
     except (ValueError, OSError, KeyError, IndexError, TypeError, UnicodeError, zipfile.BadZipFile, yaml.YAMLError) as exc:
         parser.error(str(exc))
     print(f"Prepared {len(manifest['entries'])} callback candidates, {len(manifest['included_rules'])} resolved rules.")

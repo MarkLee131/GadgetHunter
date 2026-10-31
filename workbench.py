@@ -113,7 +113,7 @@ class Jobs:
             raise ValueError('Select supported built-in profiles.')
         if {'reflection-dispatch', 'reflection-boundaries'} <= set(self.profiles):
             raise ValueError('Reflection dispatch and boundaries cannot be combined in one search.')
-        if self.java8_home and not any((Path(self.java8_home) / p).is_file() for p in ('jre/lib/rt.jar', 'lib/rt.jar')):
+        if self.java8_home and not any((Path(self.java8_home) / p).is_file() for p in ('jre/lib/rt.jar', 'lib/rt.jar', 'lib/modules')):
             raise ValueError('The target Java 8 runtime must contain jre/lib/rt.jar or lib/rt.jar.')
         self.directory = Path(directory).resolve()
         self.directory.mkdir(parents=True, exist_ok=True)
@@ -149,7 +149,7 @@ class Jobs:
 
     def submit_candidates(self, data):
         if not self.java8_home:
-            raise ValueError('Restart workbench.py with --java8-home /path/to/target-jdk8 to enable JAR scans.')
+            raise ValueError('Restart workbench.py with --java-home /path/to/target-jdk to enable JAR scans.')
         seconds, heap = data.get('search_seconds', 300), data.get('heap_mb', 4096)
         mode, model = data.get('enhancement', 'none'), str(data.get('model', 'gpt-4.1')).strip()
         if type(seconds) is not int or not 5 <= seconds <= 1800 or type(heap) is not int or not 512 <= heap <= 16384:
@@ -395,7 +395,7 @@ class Jobs:
                     raise ValueError('This job is already active.')
                 self._check_queue()
                 if not self.java8_home:
-                    raise ValueError('Configure --java8-home before running candidate scans.')
+                    raise ValueError('Configure --java-home before running candidate scans.')
                 if record['enhancement'] == 'llm' and not os.getenv('OPENAI_API_KEY'):
                     raise ValueError('LLM proposals require OPENAI_API_KEY in the server environment.')
                 new_id = uuid.uuid4().hex

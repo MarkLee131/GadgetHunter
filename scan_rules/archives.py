@@ -47,8 +47,9 @@ def safe_stem(name, index):
 
 
 class Normalizer:
-    def __init__(self, workdir, defined):
+    def __init__(self, workdir, defined, max_major=52):
         self.workdir, self.defined, self.budget = Path(workdir), set(defined), Budget()
+        self.max_major = max_major
         self.counter = 0
         self.report = {"archives": [], "dropped_newer_bytecode": 0, "dropped_multi_release": 0,
                        "dropped_module_info": 0, "shadowed_duplicates": 0, "shadowed_examples": [],
@@ -63,7 +64,7 @@ class Normalizer:
                 continue
             if len(data) < 8 or data[:4] != b"\xca\xfe\xba\xbe":
                 raise ValueError(f"Invalid class header: {label}!{name}")
-            if int.from_bytes(data[6:8], "big") > 52:
+            if int.from_bytes(data[6:8], "big") > self.max_major:
                 self.report["dropped_newer_bytecode"] += 1
                 if len(self.report["newer_bytecode_examples"]) < 10:
                     self.report["newer_bytecode_examples"].append(f"{label}!{name}")
@@ -134,7 +135,7 @@ class Normalizer:
             if name.endswith(".class"):
                 with archive.open(entry) as stream:
                     header = stream.read(8)
-                if len(header) == 8 and int.from_bytes(header[6:8], "big") > 52 or class_name(name) in self.defined:
+                if len(header) == 8 and int.from_bytes(header[6:8], "big") > self.max_major or class_name(name) in self.defined:
                     return False
         return True
 
@@ -151,9 +152,9 @@ class Normalizer:
             return self.expand(archive, str(path), role)
 
 
-def normalize(apps, libraries, runtime_jars, workdir):
-    """Return (apps, libraries, report) with only Java 8-loadable, unique classes."""
-    normalizer = Normalizer(workdir, runtime_names(runtime_jars))
+def normalize(apps, libraries, runtime_jars, workdir, max_major=52):
+    """Return (apps, libraries, report) with only target-loadable, unique classes."""
+    normalizer = Normalizer(workdir, runtime_names(runtime_jars), max_major)
     resolved = []
     for role, items in (("application", apps), ("library", libraries)):
         for item in items:

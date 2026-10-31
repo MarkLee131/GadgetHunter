@@ -192,7 +192,7 @@ def read_class(data: bytes, origin: str, include_code=False) -> JavaClass:
                      origin, hashlib.sha256(data).hexdigest())
 
 
-def inventory(paths: list[Path], max_bytes=512 * 1024 * 1024, include_code=False):
+def inventory(paths: list[Path], max_bytes=512 * 1024 * 1024, include_code=False, max_major=52):
     """Index ordinary JARs/class directories; reject ambiguous classpaths."""
     classes = {}
     consumed = 0
@@ -203,8 +203,8 @@ def inventory(paths: list[Path], max_bytes=512 * 1024 * 1024, include_code=False
         if consumed > max_bytes:
             raise ValueError("Class inventory exceeds 512 MiB")
         item = read_class(data, origin, include_code=include_code)
-        if item.major > 52:
-            raise ValueError(f"Initial native profile supports Java 8 bytecode only: {origin}")
+        if item.major > max_major:
+            raise ValueError(f"Class bytecode newer than the target runtime (major {item.major} > {max_major}): {origin}")
         if item.name in classes:
             raise ValueError(f"Duplicate class {item.name}: {classes[item.name].origin}; {origin}")
         classes[item.name] = item
