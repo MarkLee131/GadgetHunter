@@ -36,6 +36,7 @@ class SubtypeOracle:
         )
         self.timeout = timeout
         self._cache: Dict[str, Optional[Set[str]]] = {}
+        self._iface: Set[str] = set()  # class names known to be interfaces
         self._helper_cp: Optional[str] = None
         self._compile_failed = False
 
@@ -104,6 +105,8 @@ class SubtypeOracle:
                 parts = line.split("\t")
                 if len(parts) >= 2 and parts[1] == "!ERROR":
                     errored.add(parts[0])
+                elif len(parts) == 2 and parts[1] == "!INTERFACE":
+                    self._iface.add(parts[0])
                 elif len(parts) == 2:
                     edges.setdefault(parts[0], set()).add(parts[1])
         except Exception as exc:
@@ -137,3 +140,26 @@ class SubtypeOracle:
         if sa is None or sb is None:
             return None
         return (b in sa) or (a in sb)
+
+    def is_interface(self, cls: str) -> Optional[bool]:
+        """True/False if resolved, None if the class does not resolve."""
+        if self.supertypes([cls]).get(cls) is None:
+            return None
+        return cls in self._iface
+
+    def dispatch_feasible(self, receiver_type: str, callee_class: str) -> Optional[bool]:
+        """Can a receiver declared as `receiver_type` dispatch a method defined
+        in `callee_class`? Feasible if the two are in a subtype relation. By
+        Java single inheritance, two *unrelated concrete classes* share no
+        instance, so that is infeasible. If an interface is involved a common
+        implementor may exist, so the result is undecided (None) rather than
+        a potentially-false negative."""
+        res = self.supertypes([receiver_type, callee_class])
+        sr, sd = res.get(receiver_type), res.get(callee_class)
+        if sr is None or sd is None:
+            return None
+        if callee_class in sr or receiver_type in sd:
+            return True
+        if receiver_type not in self._iface and callee_class not in self._iface:
+            return False
+        return None

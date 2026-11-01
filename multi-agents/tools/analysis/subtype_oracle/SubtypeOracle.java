@@ -13,6 +13,9 @@ public class SubtypeOracle {
         for (String n : names) {
             try {
                 Class<?> c = Class.forName(n, false, cl);
+                if (c.isInterface()) {
+                    System.out.println(n + "\t!INTERFACE");
+                }
                 LinkedHashSet<String> supers = new LinkedHashSet<>();
                 collect(c, supers);
                 for (String s : supers) {

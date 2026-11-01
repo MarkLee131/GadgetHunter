@@ -636,7 +636,62 @@ class PathConstraintAgent(BaseAgent):
         self._add_inter_gadget_flows(region_analysis, json_data)
         self._resolve_casts(json_data)
         self._apply_deserialization_filter(region_analysis, json_data)
+        self._thread_gadget_dispatch(region_analysis, json_data)
         return json_data
+
+    def _thread_gadget_dispatch(self, region_analysis, json_data):
+        """Inter-gadget type threading: for each chain edge, the receiver the
+        next gadget dispatches on carries a declared type across the boundary.
+        If that receiver's type and the callee's declaring class are unrelated
+        concrete classes, no single object can be both (Java single
+        inheritance), so the chain is NOT_FEASIBLE. Decided by the subtype
+        oracle; interfaces/undetermined cases never prune.
+        """
+        oracle = self._subtype_oracle()
+        if oracle is None or not oracle.available:
+            return
+        gadgets = [g for r in region_analysis.get("regions", []) for g in r.get("gadgets", [])]
+        if len(gadgets) < 2:
+            return
+        try:
+            from tools.java_extraction.call_site import recover_receiver
+        except Exception:
+            return
+        # Receiver variable -> declared classes, from type() guards (scoped names).
+        typemap = {}
+        for g in json_data.get("guard", []):
+            m = re.match(r'type\(([^,]+),\s*([^)]+)\)\s*$', g.strip()) if isinstance(g, str) else None
+            if m:
+                typemap.setdefault(m.group(1).strip(), []).append(m.group(2).strip())
+        fqn_map = {}
+        for classes in typemap.values():
+            for c in classes:
+                c = c.strip()
+                if "." in c and re.fullmatch(r'[A-Za-z_][\w.$]*', c):
+                    fqn_map.setdefault(c.split(".")[-1], c)
+
+        def method_name(sig):
+            head = (sig or "").split("(")[0].split()
+            return head[-1] if head else None
+
+        for i in range(len(gadgets) - 1):
+            caller, callee = gadgets[i], gadgets[i + 1]
+            if not isinstance(caller, dict) or not isinstance(callee, dict):
+                continue
+            src = caller.get("source_code")
+            method = method_name(callee.get("method_signature", ""))
+            dcls = self._as_fqn(callee.get("class_name"), fqn_map)
+            if not src or not method or method in ("<init>", "<clinit>") or not dcls:
+                continue
+            recv = recover_receiver(src, method)
+            if not recv:
+                continue
+            scoped = self._scope_token(recv, i)
+            for r in typemap.get(scoped, []):
+                rf = self._as_fqn(r, fqn_map)
+                if rf and oracle.dispatch_feasible(rf, dcls) is False:
+                    json_data["guard"].append("always_throw")  # impossible dispatch
+                    return
 
     def _deserialization_filter(self):
         """Lazily build the target deserialization filter: explicit override
