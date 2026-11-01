@@ -8,57 +8,59 @@
 </head>
 <body>
 <aside class="sidebar">
-  <a class="brand" href="#overview"><span class="brand-mark">G</span><span>GadgetHunter<small>DESERIALIZATION WORKBENCH</small></span></a>
-  <div class="workspace-label">WORKSPACE</div>
+  <a class="brand" href="#overview"><span class="brand-mark">G</span><span>GadgetHunter</span></a>
   <nav aria-label="Main navigation">
-    <button class="nav-button active" data-page="overview"><span>◫</span> Overview</button>
+    <button class="nav-button active" data-page="overview"><span aria-hidden="true">◫</span> Analyses</button>
     <button class="nav-button" data-page="scan"><span>＋</span> New analysis</button>
-    <button class="nav-button" data-page="findings"><span>⌕</span> Evidence explorer <b id="nav-count">0</b></button>
+    <button class="nav-button" data-page="findings"><span aria-hidden="true">⌕</span> Results <b id="nav-count">0</b></button>
     <button class="nav-button" data-page="guide"><span>≡</span> Getting started</button>
   </nav>
-  <div class="sidebar-bottom"><div class="mode-label"><i></i><span id="mode-text">Connecting…</span></div><p id="mode-description">Checking analysis service.</p><a href="https://github.com/MarkLee131/GadgetHunter" target="_blank" rel="noopener">Source repository ↗</a><span class="version">FSE 2026 · Research edition</span></div>
+  <div class="sidebar-bottom"><div class="mode-label"><i></i><span id="mode-text">Connecting…</span></div><p id="mode-description" hidden>Checking analysis service.</p><a href="https://github.com/MarkLee131/GadgetHunter" target="_blank" rel="noopener">Source repository ↗</a></div>
 </aside>
 <main>
-  <header class="topbar"><span id="breadcrumb">Workspace <span>/</span> Overview</span><div class="top-actions"><span class="privacy-label">Your evidence, your workspace</span><button class="button secondary small" id="import-top">Import reports <span>↥</span></button></div></header>
+  <header class="topbar"><span id="breadcrumb">Analyses</span><div class="top-actions"><button class="button secondary small" id="import-top">Import reports <span>↥</span></button></div></header>
   <div id="notice" role="status" aria-live="polite" hidden></div>
   <section class="page" id="page-overview">
-    <div class="heading"><div><p class="eyebrow">JAVA DESERIALIZATION ANALYSIS</p><h1>From candidate<br>to evidence<span class="accent">.</span></h1><p class="intro">Trace candidate gadget chains. Inspect what supports a finding.<br>Keep unresolved questions in view.</p></div><div class="heading-action"><button class="button primary" data-go="scan">New analysis <span>↗</span></button><span>Static analysis · Semantic checks · Z3</span></div></div>
-    <div class="stats" id="stats"></div>
-    <div class="section-title"><h2>Analysis workspace</h2><button class="text-button" data-go="findings">Explore all evidence →</button></div>
-    <div class="workspace-grid"><section class="panel jobs-panel"><div class="panel-head"><h3>Recent analyses</h3><span class="tag" id="job-mode">LOCAL & IMPORTED</span></div><div id="jobs-list"></div></section><section class="panel workflow"><span class="eyebrow">THE ANALYSIS PATH</span><h3>Every stage leaves<br>an evidence trail.</h3><ol><li><span>01</span><div><b>Candidate chains</b><p>Static taint analysis with modified Flash.</p></div></li><li><span>02</span><div><b>Semantic reachability</b><p>Region boundaries and source context.</p></div></li><li><span>03</span><div><b>Constraint feasibility</b><p>Inspect the formula and solver outcome.</p></div></li></ol><p class="subtle">A satisfiable formula is a candidate finding. It is not proof of a working exploit or a new vulnerability.</p></section></div>
-    <div class="bottom-note"><span class="outline-icon">i</span><p><strong>Uncertainty is part of the result.</strong> Missing source, unsupported constraints, and solver timeouts remain visible as <code>UNKNOWN</code>.</p><a href="https://doi.org/10.1145/3797065" target="_blank" rel="noopener">Read the paper ↗</a></div>
+    <div class="heading"><h1>Analyses</h1><button class="button primary" data-go="scan">New analysis</button></div>
+    <section class="panel jobs-panel" aria-label="Recent analyses"><div class="panel-head"><h2>Recent analyses</h2><span class="tag" id="job-mode">Local &amp; imported</span></div><div id="jobs-list"></div></section>
+    <section class="report-summary" aria-label="Loaded results"><div class="section-title"><h2>Loaded results</h2><button class="text-button" data-go="findings">View results →</button></div><div class="stats" id="stats"></div></section>
   </section>
   <section class="page" id="page-scan" hidden>
-    <div class="page-title"><p class="eyebrow">NEW ANALYSIS</p><h1>Bring your own target.</h1><p>Find candidates in Java 8 JARs, then investigate them with matching Java sources.</p></div>
+    <div class="page-title"><h1>New analysis</h1></div>
+    <div class="analysis-switch" role="group" aria-label="Analysis stage" hidden><button type="button" data-stage="candidate" aria-pressed="true">Find candidates</button><button type="button" data-stage="source" aria-pressed="false">Analyze sources</button></div>
     <div id="hosted-setup" class="panel setup-callout" hidden><span class="tag">LOCAL ENGINE REQUIRED</span><h2>Run the engine on your machine.</h2><p>This hosted page explores reports. Launch the local workbench to scan JARs without an API key. Model proposals and subsequent source analysis require a configured provider credential.</p><pre>python workbench.py --java8-home /path/to/target-jdk8</pre><a class="button primary" href="http://127.0.0.1:8765" target="_blank" rel="noopener">Open local workbench ↗</a><button class="button secondary" data-go="guide">Setup instructions</button></div>
-    <form id="candidate-form" class="panel scan-step" hidden>
-      <div class="panel-head"><h2>1. Find candidate chains</h2><span class="tag">JAVA 8 TARGET · LOCAL SCAN</span></div>
+    <form id="candidate-form" class="panel scan-step" aria-label="Find candidates" hidden>
       <p id="candidate-runtime-note" class="subtle" hidden>To enable JAR scans, restart the server with <code>--java8-home /path/to/target-jdk8</code>. Keep JDK 17+ on PATH to run the analysis backend.</p>
       <label>Scan name<input name="name" maxlength="100" placeholder="e.g. Payment service · dependency review" required></label>
-      <div class="form-grid"><label>Application archives<input name="apps" type="file" accept=".jar,.war" multiple required><small>JARs, Spring Boot fat JARs or WARs. Nested libraries are extracted; classes newer than Java 8 are reported, not scanned.</small></label><label>Dependency JARs<input name="libraries" type="file" accept=".jar" multiple><small>Up to 64 files, 256 MiB combined. Missing dependencies limit coverage.</small></label></div>
+      <div class="form-grid"><label>Application archives (Java 8)<input name="apps" type="file" accept=".jar,.war" multiple required><small>JAR, Spring Boot JAR or WAR.</small></label><label>Dependency JARs<input name="libraries" type="file" accept=".jar" multiple><small>Optional</small></label></div>
+      <details class="advanced" id="candidate-options"><summary>Advanced settings</summary><div class="details-content">
       <div class="form-grid"><label>Time limit per search (seconds)<input name="seconds" type="number" min="5" max="1800" value="300" required></label><label>Java heap (MiB)<input name="heap" type="number" min="512" max="16384" value="4096" required></label></div>
-      <label>Taint configuration<select name="coverage"><option value="auto">Automatic: chosen from your bytecode (recommended)</option><option value="core">Commands, JNDI and nested reads only (fastest)</option><option value="reflection">All built-in effects plus reflective Method.invoke boundaries</option></select><small>Automatic adds common JDK propagation, modern effects, and reflection boundaries when your code uses reflection. Library-specific rules apply only when that library is present. Every candidate is ranked: new routes through your code first, known public chains and routes blocked on this JDK last.</small></label>
+      <label>Taint configuration<select name="coverage"><option value="auto">Automatic (recommended)</option><option value="core">Commands, JNDI and nested reads only (fastest)</option><option value="reflection">All built-in effects plus reflective Method.invoke boundaries</option></select><small>Automatic selects propagation and effect rules from your bytecode. All candidates are retained and ranked for review.</small></label>
       <label>Rule configuration<select name="enhancement" id="enhancement-mode"><option value="none">Built-in rules — no model calls</option><option value="deterministic">Compare checked wrapper rules — no model calls</option><option value="llm">Compare model proposals — experimental</option><option value="llm-gaps">Adapt to this project: model fills unimplemented APIs — experimental</option></select><small>Comparison runs two separately bounded searches and retains candidates from both. Preparation is additional to the search time limit.</small></label>
       <label id="candidate-model-label" hidden>Proposal model<input name="model" value="gpt-4.1"><small>Uses OPENAI_API_KEY from the server environment.</small></label>
-      <div class="form-footer"><p id="candidate-privacy">JARs and candidate results stay on this machine. Built-in rules require no handwritten taint configuration.</p><button class="button primary" type="submit" id="start-candidates">Find candidates ↗</button></div>
+      <details class="help-details"><summary>Supported archives and limits</summary><p>Up to 64 archives, 256 MiB combined. Nested libraries are extracted. Classes newer than Java 8 are reported, not scanned. Missing dependencies limit coverage.</p></details>
+      </div></details>
+
+      <div class="form-footer"><p id="candidate-privacy">Runs locally. No model calls with built-in rules.</p><button class="button primary" type="submit" id="start-candidates">Find candidates</button></div>
     </form>
-    <form id="scan-form" class="panel" hidden>
-      <div class="panel-head"><h2>2. Analyze candidate chains</h2><span class="tag">SOURCE + MODEL + Z3</span></div>
+    <form id="scan-form" class="panel" aria-label="Analyze sources" hidden>
       <label>Analysis name<input name="name" maxlength="100" placeholder="e.g. Payment service · review 01" required></label>
-      <label>Candidate source<select name="candidate_job_id" id="candidate-source"><option value="">Upload a chains file</option></select><small id="candidate-source-note">Select a finished local scan, or upload an existing chains file.</small></label>
+      <label>Candidate source<select name="candidate_job_id" id="candidate-source"><option value="">Upload a chains file</option></select><small id="candidate-source-note" hidden></small></label>
+      <div class="form-grid"><label id="chains-file-field">Candidate chains file<input name="chains" type="file" required></label><label>Java source bundle (.zip)<input name="sources" type="file" accept=".zip,application/zip" required><small>Matching target and dependency .java files.</small></label></div>
+      <details class="advanced" id="source-options"><summary>Advanced settings</summary><div class="details-content">
       <label id="selection-field" hidden>Chains to analyze<select name="selection"><option value="review">One per review cluster, novel and unblocked first (recommended)</option><option value="ranked">Every candidate, in review order</option><option value="all">Every candidate, in search order</option></select><small>Triage never drops candidates; known public families and routes blocked on this build are ranked last.</small></label>
-      <div class="form-grid"><label>Candidate chains file<input name="chains" type="file" required><small>The <code>chains</code> file produced by modified Flash.</small></label><label>Java source bundle (.zip)<input name="sources" type="file" accept=".zip,application/zip" required><small>Include matching target and dependency .java files. Maximum request: 32 MiB.</small></label></div>
       <div class="form-grid"><label>Model<input name="model" value="gpt-4.1" required><small>Uses the API key configured in the server environment.</small></label><label>Maximum chains<input name="limit" type="number" min="1" max="10000" value="100" required><small>Start small, then expand after reviewing initial results.</small></label></div>
-      <div class="form-footer"><p>Source context is sent to your model provider. Results and uploaded files stay in the local workbench directory.</p><button class="button primary" type="submit" id="start-scan">Start analysis ↗</button></div>
+      </div></details>
+      <div class="form-footer"><p>Source context is sent to your model provider.</p><button class="button primary" type="submit" id="start-scan">Start analysis</button></div>
     </form>
   </section>
   <section class="page" id="page-findings" hidden>
-    <div class="page-title"><p class="eyebrow">EVIDENCE EXPLORER</p><h1>Follow the finding.</h1><p>Filter by verdict, trace each call, and inspect the underlying evidence.</p></div>
+    <div class="page-title"><h1>Results</h1></div>
     <div class="filterbar"><label class="search-label"><span>⌕</span><input id="search" type="search" aria-label="Search chains" placeholder="Search class, method, or chain ID…"></label><select id="verdict-filter" aria-label="Filter verdict"><option value="">All verdicts</option><option>FEASIBLE</option><option>NOT_FEASIBLE</option><option>UNKNOWN</option><option>EARLY_STOP</option><option>ERROR</option></select><button class="button secondary" id="import-explorer">Import JSON ↥</button><button class="button secondary" id="export-all">Export results ↓</button></div>
     <div class="explorer-grid"><div class="panel result-list" id="results-list" aria-label="Candidate chains"></div><article class="panel evidence" id="evidence-detail"></article></div>
   </section>
   <section class="page" id="page-guide" hidden>
-    <div class="page-title"><p class="eyebrow">GETTING STARTED</p><h1>A short path to your first review.</h1><p>Keep the analysis engine local. Use the browser to manage scans and investigate results.</p></div>
+    <div class="page-title"><h1>Getting started</h1></div>
     <div class="guide-grid"><article class="panel guide-card"><span class="step-number">01</span><h2>Prepare the engine</h2><p>Clone the repository. Install Python 3.10+ dependencies and JDK 17 for Flash.</p><pre>git clone https://github.com/MarkLee131/GadgetHunter.git
 cd GadgetHunter
 git switch modern-scanning
@@ -75,9 +77,9 @@ pip install -r requirements.txt</pre><p class="subtle" id="branch-note">The work
 python workbench.py --java8-home /path/target-jdk8</pre><a class="text-button" href="http://127.0.0.1:8765" target="_blank" rel="noopener">Open http://127.0.0.1:8765 ↗</a><p>Upload target/dependency JARs, review scan coverage, then choose Analyze candidates and supply matching Java sources as a ZIP. Existing chains files can be uploaded directly.</p></article>
     <article class="panel guide-card"><span class="step-number">04</span><h2>Review, then verify</h2><p>Inspect call edges, extracted constraints, and unresolved evidence. Resume interrupted jobs from the overview. Export JSON to review in this hosted page without uploading it.</p><div class="verdict-guide"><b>FEASIBLE</b><span>Satisfiable under the extracted model; independently verify the application context.</span><b>UNKNOWN</b><span>Missing or unsupported evidence. This is not a negative result.</span></div></article></div>
   </section>
-  <footer>GadgetHunter <span>Region-based neuro-symbolic analysis</span><a href="https://github.com/MarkLee131/GadgetHunter" target="_blank" rel="noopener">GitHub ↗</a></footer>
+  <footer><span>GadgetHunter</span><a href="https://github.com/MarkLee131/GadgetHunter" target="_blank" rel="noopener">GitHub ↗</a></footer>
 </main>
 <input id="report-files" type="file" accept=".json,application/json" multiple hidden>
 <dialog id="log-dialog"><div class="panel-head"><h2>Worker log</h2><button id="close-log" class="button secondary small">Close</button></div><pre id="log-text"></pre></dialog>
-<dialog id="candidate-dialog"><div class="panel-head"><h2>Candidate scan details</h2><button id="close-candidate" class="button secondary small">Close</button></div><div id="candidate-detail" class="evidence-body"></div></dialog>
+<dialog id="candidate-dialog"><div class="panel-head"><h2>Scan details</h2><button id="close-candidate" class="button secondary small">Close</button></div><div id="candidate-detail" class="evidence-body"></div></dialog>
 </body></html>
