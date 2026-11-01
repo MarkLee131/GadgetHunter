@@ -208,16 +208,22 @@ The final argument limits concurrent jobs (default: 8). Each job has its own JVM
 | --- | --- |
 | `OPENAI_API_KEY` | Credential for `llm_type: gpt` |
 | `DEEPSEEK_API_KEY` | Credential for `llm_type: deepseek`; also set an appropriate `llm_model` |
+| `ZHIPUAI_API_KEY` | Credential for `llm_type: glm` (Z.ai / Zhipu GLM, OpenAI-compatible) |
 | `GADGETHUNTER_JDK_DIR` | Optional parent of `jdk8u/jdk/src/share/classes` for JDK source retrieval |
 | `EXTRACT_JAVADOC=0` | Disables Javadoc context; JSON `extract_javadoc` overrides this |
 | `--model` | Overrides `llm_model` |
 | `--debug` | Enables verbose logging |
 | `--max-chains N` | Batch limit; default `0` analyzes all chains |
 | `--solver-timeout N` | Seconds per solver process; timeout yields `UNKNOWN` without LLM repair |
+| `--java-home DIR` | Target JDK home; enables the subtype oracle for sound cast feasibility |
+| `--target-classpath PATH` | Target JAR or directory on the analysed classpath (repeatable); feeds the subtype oracle and filter auto-extraction |
+| `--deserial-filter SPEC` | Deserialization class filter: a JEP 290 pattern string or a file; overrides filter auto-extraction from the classpath |
 | `--output-dir` | Parent directory for new runs (default `results`) |
 | `--check` | Validates chains and sources and counts duplicates without calling an API |
 
-`llm_cache_size` bounds the number of validated, identical-request responses reused within a scan; `0` disables this cache. Whole-chain deduplication still applies. API timeout/retry settings currently apply to the GPT and DeepSeek clients.
+`llm_cache_size` bounds the number of validated, identical-request responses reused within a scan; `0` disables this cache. Whole-chain deduplication still applies. API timeout/retry settings currently apply to the GPT, DeepSeek and GLM clients.
+
+Cast feasibility and the deserialization class filter are decided against the real target when `--java-home` and `--target-classpath` are supplied: a cast between related types is feasible, an impossible cast makes the chain `NOT_FEASIBLE`, and a cast whose classes do not resolve stays `UNKNOWN`. A filter (given with `--deserial-filter` or auto-extracted from the classpath) makes a chain that must deserialize a filtered class `NOT_FEASIBLE`. Without these options both predicates stay `UNKNOWN` rather than being guessed.
 
 `--project-root` must contain matching `.java` files, including relevant dependency sources. Compiled JARs alone do not provide source context. Missing method source yields `UNKNOWN` rather than an inferred negative finding.
 
