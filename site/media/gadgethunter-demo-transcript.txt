@@ -2,10 +2,10 @@ GadgetHunter workbench walkthrough
 English narration generated with OpenAI gpt-4o-mini-tts, voice marin.
 Real workbench recording. Static-analysis fixture and a separate saved harmless validation report.
 
-From candidate to evidence
+Analyses
 Meet Gadget Hunter. Find Java deserialization candidates, then inspect the evidence behind each result.
 
-01 / Bring your own target
+01 / Add an archive
 Start with your application archive and its dependencies. Here, we use a small static-analysis test fixture.
 
 02 / Configure the search

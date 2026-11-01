@@ -1,0 +1,1 @@
+[VIRTUAL] <demo.Example: void entry(java.lang.Object)> --(line:3, constraint:[0])--> <demo.Example: void sink(java.lang.Object)>

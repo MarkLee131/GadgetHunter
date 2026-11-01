@@ -1,43 +1,43 @@
 1
-00:00:03,000 --> 00:00:11,307
+00:00:03,000 --> 00:00:11,306
 Meet Gadget Hunter. Find Java deserialization candidates, then inspect the evidence behind each result.
 
 2
-00:00:11,308 --> 00:00:19,039
+00:00:11,306 --> 00:00:19,036
 Start with your application archive and its dependencies. Here, we use a small static-analysis test fixture.
 
 3
-00:00:19,040 --> 00:00:27,371
+00:00:20,819 --> 00:00:29,151
 Set a search budget and choose automatic taint rules. Built-in candidate generation requires no model API key.
 
 4
-00:00:29,797 --> 00:00:36,854
+00:00:31,250 --> 00:00:38,310
 Here is the saved scan of this fixture. Open its details to inspect candidates and coverage limits.
 
 5
-00:00:36,854 --> 00:00:45,169
+00:00:40,125 --> 00:00:48,442
 Review coverage, then follow the ranked clusters. Novel means no catalogued family matched; it is a review priority.
 
 6
-00:00:50,437 --> 00:00:58,927
+00:00:55,195 --> 00:01:03,687
 For source analysis, supply candidate chains and matching Java sources. A configured model helps check semantic reachability.
 
 7
-00:00:58,928 --> 00:01:08,060
+00:01:03,687 --> 00:01:12,818
 Next, we import a saved analysis of a separate, harmless validation fixture. Reports stay in this browser session.
 
 8
-00:01:08,061 --> 00:01:16,911
+00:01:12,818 --> 00:01:21,667
 Filter by verdict. Feasible means the extracted constraints are satisfiable. It does not prove a working exploit.
 
 9
-00:01:16,911 --> 00:01:26,098
+00:01:21,667 --> 00:01:30,856
 Follow the call chain and examine the extracted constraints. Each result keeps its supporting evidence available for review.
 
 10
-00:01:26,098 --> 00:01:34,060
+00:01:30,856 --> 00:01:38,818
 Expand the matching source to check the method directly, or open the full evidence record for deeper investigation.
 
 11
-00:01:34,060 --> 00:01:43,115
+00:01:38,818 --> 00:01:47,874
 Export the report for later review. Gadget Hunter connects candidate discovery, semantic checks, and constraint evidence in one workflow.

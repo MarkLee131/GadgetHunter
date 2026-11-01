@@ -1,0 +1,124 @@
+{
+  "chain_id": 0,
+  "original_chain": [
+    "[VIRTUAL] <demo.Example: void entry(java.lang.Object)> --(line:3, constraint:[0])--> <demo.Example: void sink(java.lang.Object)>"
+  ],
+  "region_analysis": {
+    "chain_id": 0,
+    "original_chain": [
+      "[VIRTUAL] <demo.Example: void entry(java.lang.Object)> --(line:3, constraint:[0])--> <demo.Example: void sink(java.lang.Object)>"
+    ],
+    "parsed_gadgets": [
+      {
+        "gadget_id": 0,
+        "raw_gadget": "[VIRTUAL] <demo.Example: void entry(java.lang.Object)> --(line:3, constraint:[0])--> <demo.Example: void sink(java.lang.Object)>",
+        "class_name": "demo.Example",
+        "method_signature": "<demo.Example: void entry(java.lang.Object)>",
+        "method_name": "void entry",
+        "source_code": "public void entry(Object value) { sink(value); }",
+        "has_source": true,
+        "source_extraction": {
+          "success": true,
+          "source": "public void entry(Object value) { sink(value); }",
+          "line_number": 3
+        },
+        "code_summary": {
+          "gadget_id": "r0_g0",
+          "summary": "{\n  \"vars\": [],\n  \"flow\": [\n    \"arg0 -> arg0\"\n  ],\n  \"guard\": [],\n  \"runtime\": []\n}",
+          "method_signature": "<demo.Example: void entry(java.lang.Object)>",
+          "source_code": "public void entry(Object value) { sink(value); }",
+          "analysis_type": "gadget_code_summary",
+          "cache_hit": false
+        }
+      }
+    ],
+    "regions": [
+      {
+        "region_id": 0,
+        "start_gadget": 0,
+        "end_gadget": 0,
+        "gadgets": [
+          {
+            "gadget_id": 0,
+            "raw_gadget": "[VIRTUAL] <demo.Example: void entry(java.lang.Object)> --(line:3, constraint:[0])--> <demo.Example: void sink(java.lang.Object)>",
+            "class_name": "demo.Example",
+            "method_signature": "<demo.Example: void entry(java.lang.Object)>",
+            "method_name": "void entry",
+            "source_code": "public void entry(Object value) { sink(value); }",
+            "has_source": true,
+            "source_extraction": {
+              "success": true,
+              "source": "public void entry(Object value) { sink(value); }",
+              "line_number": 3
+            },
+            "code_summary": {
+              "gadget_id": "r0_g0",
+              "summary": "{\n  \"vars\": [],\n  \"flow\": [\n    \"arg0 -> arg0\"\n  ],\n  \"guard\": [],\n  \"runtime\": []\n}",
+              "method_signature": "<demo.Example: void entry(java.lang.Object)>",
+              "source_code": "public void entry(Object value) { sink(value); }",
+              "analysis_type": "gadget_code_summary",
+              "cache_hit": false
+            }
+          }
+        ],
+        "region_type": "llm_required",
+        "constraints": [
+          {
+            "type": "dynamic_dispatch",
+            "description": "Region 0 requires dynamic dispatch analysis",
+            "z3_formula": "dynamic_dispatch_region_0 == True",
+            "severity": "high",
+            "metadata": {
+              "region_type": "llm_required",
+              "gadget_count": 1
+            }
+          }
+        ],
+        "exit_conditions": [],
+        "entry_conditions": [],
+        "receiver": null,
+        "invoke_type": null
+      }
+    ],
+    "transitions": [],
+    "analysis_metadata": {
+      "total_regions": 1,
+      "static_regions": 0,
+      "llm_regions": 1,
+      "total_transitions": 0,
+      "gadget_summaries": 1
+    }
+  },
+  "semantic_analysis": {
+    "early_stopping_used": true,
+    "reachability_validated": true,
+    "edges": []
+  },
+  "feasibility_analysis": {
+    "solver_status": "sat",
+    "is_feasible": true,
+    "constraint_count": 1,
+    "execution_time": 0.12444591522216797,
+    "z3_model": "[]",
+    "constraints": [],
+    "json_constraints": {
+      "vars": [],
+      "flow": [
+        "arg0 -> arg0"
+      ],
+      "guard": [],
+      "runtime": []
+    },
+    "error_message": null
+  },
+  "conclusion": {
+    "verdict": "FEASIBLE",
+    "reasoning": "The extracted constraints are satisfiable; payload execution is not verified.",
+    "semantic_reachable": true,
+    "feasible": true,
+    "solver_status": "sat",
+    "constraint_count": 1
+  },
+  "analysis_time": 3.667965888977051,
+  "error": null
+}
