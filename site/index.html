@@ -165,7 +165,7 @@ footer .inner{max-width:980px;margin:0 auto}
   <div class="render terminal" aria-label="Example scan output">
 <pre><span class="t-dim">$</span> python scan_candidates.py \
     --app commons-collections-3.2.1.jar \
-    --java8-home $JDK8 --output scans/cc321 \
+    --java-home $JDK --output scans/cc321 \
     --profile native-core --profile modern-effects \
     --collector fair --timeout 240
 <span class="t-dim">Preparing target classpath and rules…</span>
@@ -182,7 +182,7 @@ Review first: scans/cc321/chains.review</pre>
     <div class="cols">
       <div><h3>No handwritten taint config.</h3><p class="muted">Callback roots, sinks, propagation and safe ignores are derived from your classpath. Missing dependencies and unimplemented APIs are reported, and a model can adapt rules to them, labeled as hypotheses.</p></div>
       <div><h3>Novel, known or dead.</h3><p class="muted">Every candidate is labeled against a catalog of public gadget families and checked for mitigations in the scanned bytecode itself, so vendor backports and shaded copies are judged by what they actually do.</p></div>
-      <div><h3>Real deliverables in.</h3><p class="muted">Spring Boot fat JARs and WARs are split into application and library classes. Multi-release overlays, module-info and classes newer than Java 8 are dropped and listed, so you know exactly what was not scanned.</p></div>
+      <div><h3>Real deliverables in.</h3><p class="muted">Spring Boot fat JARs and WARs are split into application and library classes. Multi-release overlays, module-info and classes newer than the target runtime you point it at are dropped and listed, so you know exactly what was not scanned.</p></div>
     </div>
   </div>
 </section>
@@ -282,8 +282,8 @@ Review first: scans/cc321/chains.review</pre>
 <section class="tile dark-3" id="start">
   <div class="narrow">
     <h2>Get started.</h2>
-    <p class="lead">Python 3.10+ and JDK 17+ on <code>PATH</code>.</p>
-    <p class="lead-airy muted">Point <code>--java8-home</code> at a JDK 8 install; the analysis uses its class library to model the target runtime. No API key until the optional analysis stage.</p>
+    <p class="lead">Python 3.10+ and a JDK 17+ on <code>PATH</code> to run the analysis.</p>
+    <p class="lead-airy muted">Point <code>--java-home</code> at a JDK that matches your target, Java 8, 11, 17 or newer; its class library models that runtime, so you scan the version you actually ship. No API key until the optional analysis stage.</p>
   </div>
   <div class="steps">
     <div><h3>Install.</h3>
@@ -292,14 +292,14 @@ python3 -m venv .venv && source .venv/bin/activate
 python -m pip install -r requirements.txt</pre></div></div>
     <div><h3>Scan a deliverable.</h3><p>Fat JARs and WARs are expanded automatically. Add <code>--lib</code> for dependencies that aren't bundled. Start with <code>chains.review</code>: one representative per cluster, in priority order, with every label explained in <code>triage.json</code>.</p>
       <div class="code"><button class="copy" type="button">Copy</button><pre>python scan_candidates.py --app /path/service.jar \
-  --java8-home /path/to/jdk8 --output scans/service \
+  --java-home /path/to/target-jdk --output scans/service \
   --collector fair --timeout 600 --heap-mb 6144</pre></div></div>
     <div><h3>Analyze the best candidates.</h3><p>Give the LLM and Z3 stage the review list instead of every candidate, so cost goes where new findings are likely.</p>
       <div class="code"><button class="copy" type="button">Copy</button><pre>cd multi-agents && export OPENAI_API_KEY=...
 python main.py --chains-file ../scans/service/chains.review \
   --project-root /path/to/sources --batch --max-chains 50</pre></div></div>
     <div><h3>Or use the browser workbench.</h3><p>Upload archives, pick effect coverage, watch progress, and send ranked representatives to analysis. Everything runs on localhost.</p>
-      <div class="code"><button class="copy" type="button">Copy</button><pre>python workbench.py --java8-home /path/to/jdk8 --collector fair
+      <div class="code"><button class="copy" type="button">Copy</button><pre>python workbench.py --java-home /path/to/target-jdk --collector fair
 # open http://127.0.0.1:8765</pre></div></div>
   </div>
 </section>

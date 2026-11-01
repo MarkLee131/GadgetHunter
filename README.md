@@ -10,7 +10,7 @@ GadgetHunter detects potential Java deserialization gadget chains using static t
 
 ### 1. Prepare the environment
 
-You need **Python 3.10+** and **JDK 17+** to run the Flash backend. Automatic candidate generation currently supports **Java 8 targets** and needs no API key. Chain analysis additionally requires matching Java sources and an **OpenAI API key**.
+You need **Python 3.10+** and **JDK 17+** to run the Flash backend. Automatic candidate generation runs against any target JDK you point it at (**Java 8, 11, 17 and newer**) and needs no API key. Chain analysis additionally requires matching Java sources and an **OpenAI API key**.
 
 From the repository root:
 
@@ -24,16 +24,16 @@ The default model is GPT-4.1; override it with `--model` or `--config`. See [con
 
 ### 2. Generate candidate chains
 
-For Java 8 targets, prepare rules and search for candidate chains in one command. Put JDK 17's `java` on `PATH`; `--java8-home` identifies the separate target runtime.
+Prepare rules and search for candidate chains in one command. Put JDK 17's `java` on `PATH`; `--java-home` identifies the separate target runtime (any version).
 
 ```bash
 python scan_candidates.py --app /absolute/path/application.jar \
-  --java8-home /absolute/path/to/target-jdk8 \
+  --java-home /absolute/path/to/target-jdk \
   --output /absolute/path/to/prepared-scan \
   --collector fair --timeout 300 --heap-mb 4096
 ```
 
-`--app` accepts ordinary JARs, Spring Boot fat JARs and WARs; nested libraries are extracted, and classes a Java 8 runtime cannot load are listed in the manifest. Add repeated `--lib /path/dependency.jar` arguments for other dependencies. This stage makes no LLM calls and needs no taint YAML: sources, sinks, propagation and ignores are derived automatically. The default `auto` profile combines native callback roots, common JDK propagation, checked ignores and modern effects (class definition, expression evaluation, JDBC, file, network, secondary deserializers), and adds reflection boundaries when your bytecode uses reflection. The manifest lists missing dependencies and unimplemented APIs; `enhance_scan.py --mode llm-gaps` lets a model propose rules for those, clearly labeled as hypotheses. See [automatic taint configuration](docs/usage.md#automatic-taint-configuration).
+`--app` accepts ordinary JARs, Spring Boot fat JARs and WARs; nested libraries are extracted, and classes the target runtime cannot load are listed in the manifest. Add repeated `--lib /path/dependency.jar` arguments for other dependencies. This stage makes no LLM calls and needs no taint YAML: sources, sinks, propagation and ignores are derived automatically. The default `auto` profile combines native callback roots, common JDK propagation, checked ignores and modern effects (class definition, expression evaluation, JDBC, file, network, secondary deserializers), and adds reflection boundaries when your bytecode uses reflection. The manifest lists missing dependencies and unimplemented APIs; `enhance_scan.py --mode llm-gaps` lets a model propose rules for those, clearly labeled as hypotheses. See [automatic taint configuration](docs/usage.md#automatic-taint-configuration).
 
 Candidates are exported to `<prepared-scan>/chains` and then triaged: `chains.review` holds one representative per cluster, with new routes through target classes first and known public chains or routes the scanned JDK/library build already blocks last. `triage.json` explains every label; nothing is removed. See [candidate triage](docs/usage.md#candidate-triage). Inspect `stage1.json` for progress and coverage: a timeout retains available complete chains and returns `partial`, not a clean verdict. If you already have a chains file, skip this step or rank it with `triage_candidates.py`.
 
@@ -63,7 +63,7 @@ python main.py \
 
 Add `--check` to validate inputs without API calls. Use `--resume /path/to/run-directory` with the same inputs and settings to continue an interrupted chain-analysis run.
 
-Prefer a browser? Run `python workbench.py --java8-home /path/to/target-jdk8` from the repository root and open [localhost:8765](http://127.0.0.1:8765). Upload JARs or WARs to generate and triage candidates, then add matching Java sources for chain analysis. See [workbench usage](docs/usage.md#local-web-workbench). The [project page](site/index.html) summarizes the workflow for new users.
+Prefer a browser? Run `python workbench.py --java-home /path/to/target-jdk` from the repository root and open [localhost:8765](http://127.0.0.1:8765). Upload JARs or WARs to generate and triage candidates, then add matching Java sources for chain analysis. See [workbench usage](docs/usage.md#local-web-workbench). The [project page](site/index.html) summarizes the workflow for new users.
 
 ## Results
 

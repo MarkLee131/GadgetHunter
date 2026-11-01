@@ -534,14 +534,16 @@ def main():
     parser = argparse.ArgumentParser(description='GadgetHunter local deserialization workbench')
     parser.add_argument('--port', type=int, default=8765)
     parser.add_argument('--data-dir', default=str(ROOT / '.gadgethunter/jobs'))
-    parser.add_argument('--java8-home', default=os.getenv('GADGETHUNTER_JAVA8_HOME'), help='Target Java 8 runtime for browser JAR scans')
+    parser.add_argument('--java-home', default=os.getenv('GADGETHUNTER_JAVA_HOME'), help='Target runtime for browser JAR scans (any JDK version)')
+    parser.add_argument('--java8-home', default=os.getenv('GADGETHUNTER_JAVA8_HOME'), help='Deprecated alias for --java-home')
     parser.add_argument('--java', default='java', help='JDK 17+ executable used to run Flash')
     parser.add_argument('--backend', choices=('auto', 'stock', 'optimized'), default='auto')
     parser.add_argument('--collector', choices=('stock', 'fair'), default='stock')
     parser.add_argument('--profile', choices=('auto', *PROFILES), action='append', help='Built-in rule profile; default auto selects from the target bytecode')
     args = parser.parse_args()
+    java_home = args.java_home or args.java8_home
     try:
-        jobs = Jobs(args.data_dir, java8_home=args.java8_home, java=args.java, backend=args.backend, collector=args.collector, profiles=args.profile)
+        jobs = Jobs(args.data_dir, java8_home=java_home, java=args.java, backend=args.backend, collector=args.collector, profiles=args.profile)
     except (OSError, ValueError) as exc:
         parser.error(str(exc))
     try:

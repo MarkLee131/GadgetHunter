@@ -7,32 +7,32 @@
 From the repository root, after installing the Python dependencies:
 
 ```bash
-python workbench.py --java8-home /path/to/target-jdk8
+python workbench.py --java-home /path/to/target-jdk
 ```
 
-Open <http://127.0.0.1:8765>. In **Find candidate chains**, upload application archives (JAR, Spring Boot fat JAR or WAR) and dependency JARs, choose the effect coverage, Java heap and time limit, and start a scan. Built-in rules and deterministic wrapper enhancement need no API key. JDK 17+ runs Flash; `--java8-home` supplies the distinct target runtime, and `--java` can select the host executable. The server processes one job at a time.
+Open <http://127.0.0.1:8765>. In **Find candidate chains**, upload application archives (JAR, Spring Boot fat JAR or WAR) and dependency JARs, choose the effect coverage, Java heap and time limit, and start a scan. Built-in rules and deterministic wrapper enhancement need no API key. JDK 17+ runs Flash; `--java-home` supplies the distinct target runtime (any version), and `--java` can select the host executable. The server processes one job at a time.
 
 The overview shows preparation/search phases, backend method counters and available results. **Scan details** exposes indexed classes, loaded rules, unresolved dependencies, search limits, candidate provenance and **Review priority**: the [triage](#candidate-triage) summary and the best-ranked cluster representatives with their labels. Comparisons run the baseline and enhanced searches separately, each with the chosen time limit; preparation and optional model requests take additional time. Complete candidates are retained and merged even when a search times out or enhancement fails. Their presence or absence is not a vulnerability verdict.
 
 Choose **Analyze candidates** on a finished job, upload matching target/dependency Java sources as a ZIP, and start with a small chain limit. **Chains to analyze** defaults to one representative per review cluster in triage order; every candidate in review or search order is also available. Alternatively, upload an existing `chains` file. Chain analysis and optional LLM rule proposals require `OPENAI_API_KEY` in the server environment before startup. Source context or selected bytecode is sent to the configured model provider for those stages; the browser never receives the key. Candidate scans can be cancelled and run again in a fresh job; chain analysis supports resume. Cancellation during preparation or a model request takes effect when that operation returns.
 
-Jobs, uploads and results are stored in `.gadgethunter/jobs/`; use `--data-dir` to choose another directory and `--port` to change the port. Candidate jobs retain `baseline/`, optional `enhanced/`, merged `chains`, and `candidate-index.json` recording which phase found each chain. The service binds to loopback only. Archive uploads allow at most 64 files and 256 MiB combined (360 MiB encoded HTTP request). Source/chain submissions retain their 32 MiB encoded limit; only `.java` entries are extracted from source ZIPs. The same Java 8 target and archive normalization as the CLI apply.
+Jobs, uploads and results are stored in `.gadgethunter/jobs/`; use `--data-dir` to choose another directory and `--port` to change the port. Candidate jobs retain `baseline/`, optional `enhanced/`, merged `chains`, and `candidate-index.json` recording which phase found each chain. The service binds to loopback only. Archive uploads allow at most 64 files and 256 MiB combined (360 MiB encoded HTTP request). Source/chain submissions retain their 32 MiB encoded limit; only `.java` entries are extracted from source ZIPs. The same target-runtime resolution and archive normalization as the CLI apply.
 
 The page also works as a static report explorer: import per-chain result JSON files or an exported array, filter findings, inspect constraints and download results. Imported reports stay in the browser session. A hosted/static copy cannot run Java or Python scans; use the local workbench for execution.
 
 ## Bounded candidate generation
 
-`scan_candidates.py` prepares a Java 8 native-deserialization configuration and executes Flash without an API key or handwritten taint YAML:
+`scan_candidates.py` prepares a native-deserialization configuration for the target runtime and executes Flash without an API key or handwritten taint YAML:
 
 ```bash
 python scan_candidates.py --app /path/application.jar --lib /path/dependency.jar \
-  --java8-home /path/target-jdk8 --output /path/new-scan \
+  --java-home /path/target-jdk --output /path/new-scan \
   --timeout 300 --heap-mb 4096 --stack-mb 16
 ```
 
-Repeat `--app`/`--lib` for additional JARs or class directories. `--java` selects the JDK 17+ executable running Flash; it is distinct from the target Java 8 runtime. No profile flags are needed: the default `auto` selection is described in [automatic taint configuration](#automatic-taint-configuration).
+Repeat `--app`/`--lib` for additional JARs or class directories. `--java` selects the JDK 17+ executable running Flash; it is distinct from the target runtime supplied by `--java-home`. No profile flags are needed: the default `auto` selection is described in [automatic taint configuration](#automatic-taint-configuration).
 
-Spring Boot fat JARs, WARs and multi-release JARs can be passed directly. Preparation writes ordinary JARs to `<output>/classpath`: `BOOT-INF/classes` and `WEB-INF/classes` become application classes, nested `lib/*.jar` entries become libraries, and launcher classes are skipped. A Java 8 runtime cannot load multi-release overlays, `module-info` or classes newer than bytecode 52, so these are dropped. A duplicate class keeps its first definition in classpath order (runtime, then applications, then libraries), as the JVM does. `manifest.json.classpath_normalization` lists every dropped or shadowed class, and the manifest limitations state counts. Unchanged ordinary JARs are used in place.
+Spring Boot fat JARs, WARs and multi-release JARs can be passed directly. Preparation writes ordinary JARs to `<output>/classpath`: `BOOT-INF/classes` and `WEB-INF/classes` become application classes, nested `lib/*.jar` entries become libraries, and launcher classes are skipped. The resolved target runtime cannot load multi-release overlays, `module-info` or classes newer than its own bytecode version, so these are dropped. A duplicate class keeps its first definition in classpath order (runtime, then applications, then libraries), as the JVM does. `manifest.json.classpath_normalization` lists every dropped or shadowed class, and the manifest limitations state counts. Unchanged ordinary JARs are used in place.
 
 | Artifact | Purpose |
 | --- | --- |
@@ -154,7 +154,7 @@ To try model-generated proposals, set `OPENAI_API_KEY` and add `--mode llm --mod
 
 Stage 1 uses the modified Flash backend bundled in `multi-agents/flash/flash.jar`. Its chain output includes call kinds, line numbers, and taint annotations consumed by the Python stages. Use this build when generating chains for GadgetHunter.
 
-For a Java 8 native-deserialization scan, use [`prepare_scan.py`](adaptive-taint-design.md#implemented-first-step) to resolve built-in rules and generate the configuration from your target classpath. It also supplies the runtime directory layout expected by Flash. The initial profiles are experimental and do not establish application exposure or verify filters.
+For a native-deserialization scan, use [`prepare_scan.py`](adaptive-taint-design.md#implemented-first-step) to resolve built-in rules and generate the configuration from your target classpath. It also supplies the runtime directory layout expected by Flash. The initial profiles are experimental and do not establish application exposure or verify filters.
 
 For benchmark reproduction or manual settings, start from the [Depth configuration](../gleipner_results/configs/config_depth.yml). Its knowledge file is specific to Gleipner and should not be used as a general security default. Adapt these fields:
 
@@ -169,7 +169,7 @@ For benchmark reproduction or manual settings, start from the [Depth configurati
 
 The shell runner changes into the configuration file's directory before starting Java. Relative paths inside the configuration are resolved there. Use absolute paths for both the configuration argument and its path fields to avoid ambiguity. The benchmark JAR paths in the example refer to an external benchmark checkout; those target JARs and sources are not included in this repository.
 
-With the supplied `prependJVM: false` and `javaVersion: 8`, the bundled backend also expects the target runtime JARs under `<config-directory>/java-benchmarks/JREs/jre1.8/`. An external Java 8 target runtime is required in addition to the JVM used to run Flash. The preparation command creates links to it automatically.
+With `prependJVM: false`, the bundled backend expects the target runtime JARs under `<config-directory>/java-benchmarks/JREs/jre1.<javaVersion>/` (the supplied Gleipner example uses `javaVersion: 8`, so `jre1.8/`). A target runtime matching `javaVersion`, separate from the JVM used to run Flash, is required. The preparation command creates links to it automatically.
 
 Run from the repository root:
 
