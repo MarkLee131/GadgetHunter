@@ -115,31 +115,24 @@ td code{font-size:12.5px}
 
 /* Quick start: steps with code renders on dark */
 .steps{margin:56px auto 0;max-width:820px;text-align:left;display:grid;gap:48px}
+.steps>div{min-width:0}
 .steps p{margin:0 0 17px;color:var(--body-muted)}
 .code{position:relative;background:var(--tile-1);border-radius:18px}
 .code pre{margin:0;padding:24px 28px;overflow-x:auto;font:400 14px/1.7 var(--mono);letter-spacing:0;color:#f5f5f7;white-space:pre}
 .copy{position:absolute;top:12px;right:12px;background:var(--pearl);color:var(--ink-muted-80);border:3px solid var(--divider-soft);border-radius:11px;padding:6px 14px;font:400 14px/1.29 var(--text);letter-spacing:-.224px;cursor:pointer;transition:transform .1s}
 .copy:active{transform:scale(.95)}
 
-/* Limits */
-.two{display:grid;grid-template-columns:1fr 1fr;gap:64px;margin-top:56px;text-align:left}
-.two ul{margin:0;padding-left:20px}
-.two li{margin-bottom:12px}
-.two li strong{font-weight:600}
-
 /* Footer: parchment, dense links */
 footer{background:var(--parchment);color:var(--ink-muted-80);padding:64px 22px}
 footer .inner{max-width:980px;margin:0 auto}
-.foot-cols{display:grid;grid-template-columns:repeat(2,1fr);gap:32px;padding-bottom:32px;border-bottom:1px solid var(--hairline)}
-.foot-cols h4{margin:0 0 8px;font:600 14px/1.29 var(--text);letter-spacing:-.224px;color:var(--ink)}
-.foot-cols a{display:block;color:var(--ink-muted-80);font:400 17px/2.41 var(--text);letter-spacing:0}
+.foot-links{display:flex;flex-wrap:wrap;gap:24px;padding-bottom:32px;border-bottom:1px solid var(--hairline)}
+.foot-links a{color:var(--ink-muted-80);font:400 17px/1.5 var(--text);letter-spacing:0}
 .legal{padding-top:24px;font:400 12px/1.6 var(--text);letter-spacing:-.12px;color:var(--ink-muted-48)}
 
 /* Responsive ladder from the design system */
 @media(max-width:1068px){h1{font-size:40px;line-height:1.1}.cards{grid-template-columns:repeat(2,1fr)}.cols.four{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:833px){.global-nav .links a:not(.keep){display:none}.cols,.figures{grid-template-columns:1fr;gap:32px}.two{grid-template-columns:1fr;gap:48px}.lead{font-size:24px}}
-@media(max-width:734px){th:nth-child(2),td:nth-child(2){display:none}}
-@media(max-width:640px){h1{font-size:34px}h2{font-size:32px}.cards,.cols.four,.foot-cols{grid-template-columns:1fr}.render.terminal pre{font-size:12px;padding:20px}.lead{font-size:21px}}
+@media(max-width:833px){.global-nav .links a:not(.keep){display:none}.cols,.figures{grid-template-columns:1fr;gap:32px}.lead{font-size:24px}}
+@media(max-width:640px){h1{font-size:34px}h2{font-size:32px}.cards,.cols.four{grid-template-columns:1fr}.render.terminal pre{font-size:12px;padding:20px}.lead{font-size:21px}}
 @media(max-width:419px){h1{font-size:28px}.tile{padding:48px 17px}}
 </style>
 </head>
@@ -274,9 +267,11 @@ python main.py --chains-file ../scans/service/chains.review \
 </main>
 
 <footer><div class="inner">
-  <div class="foot-cols">
-    <div><h4>Project</h4><a href="https://github.com/MarkLee131/GadgetHunter/tree/modern-scanning">GitHub</a><a href="https://github.com/MarkLee131/GadgetHunter/blob/modern-scanning/docs/usage.md">Usage guide</a><a href="https://github.com/MarkLee131/GadgetHunter/blob/modern-scanning/LICENSE">License</a></div>
-    <div><h4>Research</h4><a href="https://github.com/MarkLee131/GadgetHunter/blob/modern-scanning/paper/kaixuan-FSE26_GadgetHunter.pdf">Paper (PDF)</a><a href="https://github.com/MarkLee131/GadgetHunter/tree/main">Paper artifact</a><a href="https://kaixuanli-ecnu.github.io/">Kaixuan Li</a></div>
+  <div class="foot-links">
+    <a href="https://github.com/MarkLee131/GadgetHunter/tree/modern-scanning">GitHub</a>
+    <a href="https://github.com/MarkLee131/GadgetHunter/blob/modern-scanning/docs/usage.md">Usage guide</a>
+    <a href="https://github.com/MarkLee131/GadgetHunter/blob/modern-scanning/LICENSE">License</a>
+    <a href="https://github.com/MarkLee131/GadgetHunter/tree/main">Paper artifact</a>
   </div>
   <p class="legal">GadgetHunter is licensed under Apache 2.0, except the LGPL backend helper and collector adapter. Candidate chains are static-analysis leads, not verified vulnerabilities.</p>
 </div></footer>
