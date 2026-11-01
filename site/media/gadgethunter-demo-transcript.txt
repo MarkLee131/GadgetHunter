@@ -1,0 +1,36 @@
+GadgetHunter workbench walkthrough
+English narration generated with OpenAI gpt-4o-mini-tts, voice marin.
+Real workbench recording. Static-analysis fixture and a separate saved harmless validation report.
+
+From candidate to evidence
+Meet Gadget Hunter. Find Java deserialization candidates, then inspect the evidence behind each result.
+
+01 / Bring your own target
+Start with your application archive and its dependencies. Here, we use a small static-analysis test fixture.
+
+02 / Configure the search
+Set a search budget and choose automatic taint rules. Built-in candidate generation requires no model API key.
+
+03 / Review a saved scan
+Here is the saved scan of this fixture. Open its details to inspect candidates and coverage limits.
+
+Prioritize the review
+Review coverage, then follow the ranked clusters. Novel means no catalogued family matched; it is a review priority.
+
+04 / Add matching source
+For source analysis, supply candidate chains and matching Java sources. A configured model helps check semantic reachability.
+
+05 / Open saved evidence
+Next, we import a saved analysis of a separate, harmless validation fixture. Reports stay in this browser session.
+
+06 / Understand the verdict
+Filter by verdict. Feasible means the extracted constraints are satisfiable. It does not prove a working exploit.
+
+07 / Trace the reasoning
+Follow the call chain and examine the extracted constraints. Each result keeps its supporting evidence available for review.
+
+08 / Inspect the source
+Expand the matching source to check the method directly, or open the full evidence record for deeper investigation.
+
+09 / Keep the evidence
+Export the report for later review. Gadget Hunter connects candidate discovery, semantic checks, and constraint evidence in one workflow.
