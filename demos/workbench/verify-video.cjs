@@ -1,5 +1,8 @@
 const { chromium } = require(require('node:path').resolve('.gadgethunter/tools/demo-video/node_modules/playwright'));
 const fs = require('fs');
+const {execFileSync}=require('node:child_process');
+const expectedDuration=Number(execFileSync('ffprobe',['-v','error','-show_entries','format=duration','-of','csv=p=0','site/media/gadgethunter-demo.mp4'],{encoding:'utf8'}).trim());
+const expectedCues=JSON.parse(fs.readFileSync('demos/workbench/scenario.json','utf8')).steps.length;
 const baseUrl=process.env.DEMO_PAGE_URL||'http://127.0.0.1:8877/';
 (async () => {
   const browser = await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH});
@@ -11,13 +14,13 @@ const baseUrl=process.env.DEMO_PAGE_URL||'http://127.0.0.1:8877/';
   const assets=await desktop.evaluate(()=>[...document.querySelectorAll('#demo [src],#demo [poster],#demo a[href]')].flatMap(e=>[e.getAttribute('src'),e.getAttribute('poster'),e.getAttribute('href')].filter(Boolean)));
   for(const asset of assets){const response=await desktop.request.get(new URL(asset,baseUrl).href);if(!response.ok())throw Error(`Asset ${asset}: ${response.status()}`);}
   const metadata=await desktop.locator('video').evaluate(async v=>{v.preload='auto';v.load();await new Promise((resolve,reject)=>{v.addEventListener('loadedmetadata',resolve,{once:true});v.addEventListener('error',()=>reject(Error('Video metadata error')),{once:true});});return {duration:v.duration,width:v.videoWidth,height:v.videoHeight,autoplay:v.autoplay,controls:v.controls};});
-  if(metadata.width!==1920||metadata.height!==1080||metadata.duration<99||metadata.duration>115||metadata.autoplay||!metadata.controls)throw Error('Unexpected video metadata '+JSON.stringify(metadata));
+  if(metadata.width!==1920||metadata.height!==1080||Math.abs(metadata.duration-expectedDuration)>0.05||metadata.autoplay||!metadata.controls)throw Error('Unexpected video metadata '+JSON.stringify(metadata));
   await desktop.locator('video').evaluate(async v=>{v.muted=true;await v.play();});
   await desktop.waitForFunction(()=>document.querySelector('video').currentTime>0.4);
   for(const t of [30,78,96]){await desktop.locator('video').evaluate(async (v,t)=>{v.currentTime=t;await new Promise(resolve=>v.addEventListener('seeked',resolve,{once:true}));},t);}
   await desktop.locator('video').evaluate(v=>v.pause());
   const track=await desktop.locator('video').evaluate(async v=>{const t=v.textTracks[0];t.mode='hidden';await new Promise(resolve=>setTimeout(resolve,400));return {language:t.language,cues:t.cues?.length};});
-  if(track.cues!==11)throw Error('Missing caption cues '+JSON.stringify(track));
+  if(track.cues!==expectedCues)throw Error('Missing caption cues '+JSON.stringify(track));
   const mobile=await browser.newPage({viewport:{width:390,height:844},isMobile:true,deviceScaleFactor:2});
   await mobile.goto(baseUrl+'#demo');
   await mobile.waitForFunction(()=>document.querySelector('video').readyState >= 1);

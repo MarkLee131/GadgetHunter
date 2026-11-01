@@ -15,12 +15,12 @@
     "model": "gpt-4o-mini-tts",
     "voice": "marin",
     "speed": 1,
-    "instructions": "A clear, warm professional software walkthrough for researchers. Speak at a measured, natural pace. Confident but understated. Pronounce GadgetHunter as Gadget Hunter, JAR as jar, and Z3 as zee three."
+    "instructions": "Narrate an academic software demonstration for software engineering and information security researchers. Use a neutral, precise, measured tone with natural sentence pauses. Avoid promotional emphasis. Pronounce GadgetHunter as Gadget Hunter. Read LLM as the letters L L M, SMT as S M T, JSON as jay-sun, and FEASIBLE as the ordinary word feasible. Enunciate deserialization, satisfiability, and reachability clearly."
   },
   "steps": [
     {
-      "label": "Analyses",
-      "say": "Meet Gadget Hunter. Find Java deserialization candidates, then inspect the evidence behind each result.",
+      "label": "Workflow overview",
+      "say": "GadgetHunter combines static taint analysis, LLM-assisted semantic reachability analysis, and SMT-based path feasibility checking for Java deserialization gadget chains.",
       "actions": [
         {
           "type": "waitFor",
@@ -29,8 +29,8 @@
       ]
     },
     {
-      "label": "01 / Add an archive",
-      "say": "Start with your application archive and its dependencies. Here, we use a small static-analysis test fixture.",
+      "label": "Target artifacts",
+      "say": "Upload the target application and its dependencies. This demonstration uses a Java test program compiled to bytecode.",
       "actions": [
         {
           "type": "click",
@@ -51,8 +51,8 @@
       ]
     },
     {
-      "label": "02 / Configure the search",
-      "say": "Set a search budget and choose automatic taint rules. Built-in candidate generation requires no model API key.",
+      "label": "Candidate generation",
+      "say": "Set the search time limit and select automatic taint rules. Candidate generation uses static analysis and does not invoke an LLM.",
       "actions": [
         {
           "type": "fill",
@@ -82,8 +82,8 @@
       ]
     },
     {
-      "label": "03 / Review a saved scan",
-      "say": "Here is the saved scan of this fixture. Open its details to inspect candidates and coverage limits.",
+      "label": "Coverage diagnostics",
+      "say": "Inspect the saved candidate-generation results and coverage diagnostics. Partial coverage does not rule out additional gadget chains.",
       "actions": [
         {
           "type": "click",
@@ -102,8 +102,8 @@
       ]
     },
     {
-      "label": "Prioritize the review",
-      "say": "Review coverage, then follow the ranked clusters. Novel means no catalogued family matched; it is a review priority.",
+      "label": "Candidate triage",
+      "say": "Review the ranked candidate clusters. Novel denotes no match to a catalogued gadget-chain family; it does not establish a new vulnerability.",
       "actions": [
         {
           "type": "wait",
@@ -127,8 +127,8 @@
       ]
     },
     {
-      "label": "04 / Add matching source",
-      "say": "For source analysis, supply candidate chains and matching Java sources. A configured model helps check semantic reachability.",
+      "label": "Source-level analysis",
+      "say": "Supply candidate chains and corresponding Java source code for region-based semantic reachability analysis and constraint extraction.",
       "actions": [
         {
           "type": "fill",
@@ -171,8 +171,8 @@
       ]
     },
     {
-      "label": "05 / Open saved evidence",
-      "say": "Next, we import a saved analysis of a separate, harmless validation fixture. Reports stay in this browser session.",
+      "label": "Saved analysis report",
+      "say": "We now import a previously generated report for a separate, benign test case. No new source analysis is executed in this demonstration.",
       "actions": [
         {
           "type": "upload",
@@ -196,8 +196,8 @@
       ]
     },
     {
-      "label": "06 / Understand the verdict",
-      "say": "Filter by verdict. Feasible means the extracted constraints are satisfiable. It does not prove a working exploit.",
+      "label": "Feasibility result",
+      "say": "FEASIBLE indicates satisfiability of the extracted constraints under the analysis model. It does not establish exploitability in the target environment.",
       "actions": [
         {
           "type": "select",
@@ -212,8 +212,8 @@
       ]
     },
     {
-      "label": "07 / Trace the reasoning",
-      "say": "Follow the call chain and examine the extracted constraints. Each result keeps its supporting evidence available for review.",
+      "label": "Call chain and constraints",
+      "say": "Inspect the call chain and extracted constraints to assess the data-flow relationships and path conditions represented by the analysis.",
       "actions": [
         {
           "type": "scroll",
@@ -223,8 +223,8 @@
       ]
     },
     {
-      "label": "08 / Inspect the source",
-      "say": "Expand the matching source to check the method directly, or open the full evidence record for deeper investigation.",
+      "label": "Source inspection",
+      "say": "Examine the corresponding method implementation and the complete analysis record to review the basis for the reported result.",
       "actions": [
         {
           "type": "click",
@@ -238,8 +238,8 @@
       ]
     },
     {
-      "label": "09 / Keep the evidence",
-      "say": "Export the report for later review. Gadget Hunter connects candidate discovery, semantic checks, and constraint evidence in one workflow.",
+      "label": "Report export",
+      "say": "Export the analysis report as JSON to support manual review, independent validation, and subsequent analysis.",
       "actions": [
         {
           "type": "scroll",

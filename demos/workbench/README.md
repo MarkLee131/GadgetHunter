@@ -14,6 +14,14 @@ The saved validation evidence came from the local workbench run of 2026-10-31 us
 
 Narration uses OpenAI `gpt-4o-mini-tts`, voice `marin`. Only narration text is sent to the speech API. Keys are read from `OPENAI_API_KEY`; they are never placed in a scenario or generated asset.
 
+## Narration terminology
+
+The English narration uses the terminology of the [GadgetHunter paper](https://kaixuanli-ecnu.github.io/papers/kaixuan-FSE26_GadgetHunter.pdf), especially Sections 3.3–3.5, and the [FLASH paper](https://www.usenix.org/system/files/usenixsecurity25-zhang-yiheng.pdf): static taint analysis, candidate gadget chains, semantic reachability analysis, constraint extraction, and SMT-based path feasibility checking.
+
+The script distinguishes algorithm capabilities from what this recording executes. It shows saved candidate-generation results and imports a report for a separate benign test case; it does not execute a new source analysis. `FEASIBLE` denotes satisfiability under the extracted analysis model, not demonstrated exploitability. The `novel` triage label denotes no match to a catalogued gadget-chain family, not a confirmed new vulnerability. Partial coverage does not exclude additional gadget chains.
+
+Prefer precise, neutral statements tied to the visible operation. Avoid promotional introductions, vague references to “evidence,” and claims of exploit verification unsupported by the recorded test case. Keep each caption to at most two readable lines. Narration and captions are generated from the same `say` field in `scenario.json`.
+
 ## Tools and attribution
 
 Recording and speech helpers use the [Hmache/demo Agent Skill](https://github.com/Hmache/demo/tree/c78aa32fbcf3ca43522bde25d650c40233ee8284), licensed MIT, copyright 2026 Hmache. Its source and license stay together in the ignored local tool directory. `record.py` adds file uploads and optional scene preparation before narration to a generated local copy of the recorder.
@@ -80,10 +88,10 @@ Set `CHROMIUM_PATH` if using an existing browser instead of Playwright's default
 
 ## Delivered build verification
 
-The updated MP4 is 112.898 seconds, 1920 × 1080 at 30 fps, H.264 video with AAC audio, 6,977,610 bytes. Narration is unchanged and reused from the verified audio cache. The recording is new, using the revised UI; framing and title cards use neutral backgrounds and blue accents.
+The updated MP4 is 127.763 seconds, 1920 × 1080 at 30 fps, H.264 video with AAC audio, 7,413,221 bytes. All 11 narration segments were rewritten using software engineering and security research terminology, regenerated, and synchronized with a new recording of the revised UI. Framing and title cards use neutral backgrounds and blue accents.
 
 The independent frontend review found a polling/disclosure regression; the fix preserves open details on the same chain, skips unchanged result rendering and retains job-action keyboard focus. The regression checks passed. The existing workbench unittest suite ran 14 tests: 13 passed and one was skipped for Java backend prerequisites.
 
-Full FFmpeg decoding, desktop/mobile player playback, caption loading and representative frame inspection are checked before deployment. The upstream voice checker does not detect the first onset because its silence threshold exceeds the clip's initial silence; all later scene offsets are approximately 0.09–0.13 seconds. The same cached first narration was already independently checked at 3.146 seconds after the 3-second title.
+Full FFmpeg decoding, desktop/mobile player playback, all 11 caption cues, and representative frame inspection passed. An independent speech-to-text check matched all 11 narration segments after punctuation and spelling normalization. The upstream voice checker misses the first onset because its silence threshold exceeds the voice clip's initial silence; inspection of the final MP4 places that onset at 3.144 seconds after the 3-second title. Later scene offsets are approximately 0.08–0.13 seconds.
 
 The webpage and media publish to https://marklee131.github.io/GadgetHunter/#demo. Application-engine code is outside this UI change.
