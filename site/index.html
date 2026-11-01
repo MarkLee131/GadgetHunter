@@ -195,7 +195,7 @@ Review first: scans/cc321/chains.review</pre>
       <p class="paper-title">GadgetHunter: Region-Based Neuro-symbolic Detection of Java Deserialization Vulnerabilities</p>
       <p class="authors"><a href="https://kaixuanli-ecnu.github.io/">Kaixuan Li</a>, Jian Zhang, Chong Wang, Sen Chen, Zong Cao, Min Zhang, Yang Liu</p>
       <p class="fine">Proc. ACM Softw. Eng. 3, FSE, Article FSE003 (July 2026)</p>
-      <p class="muted abstract">Static analysis scales but drowns in infeasible paths and loses precision at reflection and dynamic dispatch; dynamic validation is precise but too costly to reach deep chains. GadgetHunter splits each gadget chain into regions by analyzability. Statically resolvable segments go through interprocedural taint analysis, dynamic boundaries are checked by an LLM, and the constraints of every gadget are composed into SMT formulas that decide whether the chain is feasible.</p>
+      <p class="muted abstract">GadgetHunter splits each gadget chain into regions by analyzability: statically resolvable segments go through interprocedural taint analysis, dynamic boundaries are checked by an LLM, and each gadget's constraints are composed into SMT formulas that decide feasibility.</p>
     </div>
     <div class="figures">
       <div class="figure"><strong>Up to 32%</strong><p class="muted">fewer false negatives than state-of-the-art tools on the ysoserial benchmark.</p></div>
@@ -203,18 +203,6 @@ Review first: scans/cc321/chains.review</pre>
       <div class="figure"><strong>197</strong><p class="muted">previously unknown gadget chains discovered, and 4 recent CVEs rediscovered.</p></div>
     </div>
     <div class="ctas"><a class="btn btn-primary" href="https://github.com/MarkLee131/GadgetHunter/blob/modern-scanning/paper/kaixuan-FSE26_GadgetHunter.pdf">Read the paper</a><a class="btn btn-secondary" href="https://doi.org/10.1145/3797065">ACM Digital Library</a></div>
-    <div class="code bib"><button class="copy" type="button">Copy</button><pre>@article{li2026gadgethunter,
-  author    = {Li, Kaixuan and Zhang, Jian and Wang, Chong and Chen, Sen and
-               Cao, Zong and Zhang, Min and Liu, Yang},
-  title     = {{GadgetHunter}: Region-Based Neuro-symbolic Detection of
-               {Java} Deserialization Vulnerabilities},
-  journal   = {Proc. ACM Softw. Eng.},
-  volume    = {3},
-  number    = {FSE},
-  articleno = {FSE003},
-  year      = {2026},
-  doi       = {10.1145/3797065}
-}</pre></div>
   </div>
 </section>
 
@@ -244,38 +232,17 @@ Review first: scans/cc321/chains.review</pre>
     <div class="row"><span class="rank">#3</span><div><div class="chips"><span class="chip strong">known</span><span class="chip">secondary-deserialization</span><span class="chip">jdk-jrmp-client</span></div><code>Main.readObject → RemoteObjectInvocationHandler.invoke → … → UnicastRef.unmarshalValue → ObjectInput.readObject</code></div></div>
     <div class="row"><span class="rank">#4</span><div><div class="chips"><span class="chip strong">blocked</span><span class="chip">process-execution</span></div><code>Main.readObject → AnnotationInvocationHandler.invoke → UIDefaults$TextAndMnemonicHashMap.get → … → Runtime.exec</code><small>readObject rebuilds memberValues as a fresh LinkedHashMap (JDK 8u71+)</small></div></div>
   </div>
-  <div class="wide">
-    <div class="cols four">
-      <div><h3>Novel</h3><p class="muted">No known family's core gadget appears. Shared triggers like <code>HashMap</code> don't count against it.</p></div>
-      <div><h3>Known</h3><p class="muted">Uses a core gadget from a public family. A sanity check, rarely a new report.</p></div>
-      <div><h3>Blocked</h3><p class="muted">The scanned bytecode shows the route is dead, like <code>AnnotationInvocationHandler</code> since 8u71.</p></div>
-      <div><h3>Constrained</h3><p class="muted">The effect needs more than the chain, such as a JNDI lookup that needs a local <code>ObjectFactory</code>.</p></div>
-    </div>
+  <div class="narrow">
+    <p class="caption muted" style="margin-top:24px"><strong>novel</strong> no known family's core gadget · <strong>known</strong> a public family · <strong>blocked</strong> dead in the scanned bytecode · <strong>constrained</strong> needs more than the chain</p>
   </div>
 </section>
 
 
 <section class="tile parchment" id="coverage">
-  <div class="wide">
+  <div class="narrow">
     <h2>Effect coverage without a YAML file.</h2>
-    <p class="lead">Sources, sinks, propagation and ignores, chosen from your bytecode.</p>
-    <div class="table-card">
-      <table>
-        <thead><tr><th>Effect family</th><th>Boundary</th><th>Examples</th></tr></thead>
-        <tbody>
-          <tr><td>Process execution<span>priority 3</span></td><td>Command reaches process start</td><td><code>Runtime.exec</code>, <code>ProcessBuilder.start</code></td></tr>
-          <tr><td>Class definition<span>priority 3</span></td><td>Controlled bytes or URLs become a class</td><td><code>ClassLoader.defineClass</code>, <code>Unsafe.defineAnonymousClass</code>, <code>URLClassLoader.newInstance</code>, <code>GroovyClassLoader.parseClass</code></td></tr>
-          <tr><td>Expression evaluation<span>priority 3</span></td><td>A parsed expression is evaluated</td><td><code>ScriptEngine.eval</code>, EL <code>ValueExpression.getValue</code>, SpEL <code>Expression.getValue</code>, MVEL, <code>GroovyShell.evaluate</code></td></tr>
-          <tr><td>JNDI lookup<span>priority 2</span></td><td>Controlled name reaches lookup</td><td><code>Context.lookup</code>, <code>InitialContext.lookup</code></td></tr>
-          <tr><td>JDBC connection<span>priority 2</span></td><td>Attacker-chosen URL or data source connects</td><td><code>DriverManager.getConnection</code>, <code>Driver.connect</code>, <code>DataSource.getConnection</code></td></tr>
-          <tr><td>Secondary deserialization<span>priority 2</span></td><td>A new deserializer outside the original stream's filter</td><td>new <code>ObjectInputStream</code>, <code>XMLDecoder</code>, XStream, SnakeYAML, Hessian, fastjson</td></tr>
-          <tr><td>Reflective invocation<span>priority 1</span></td><td>Controlled method or constructor selection</td><td><code>Method.invoke</code>, <code>Constructor.newInstance</code> (optional profile)</td></tr>
-          <tr><td>File write and delete<span>priority 1</span></td><td>Controlled path reaches a write, rename or delete</td><td><code>FileOutputStream</code>, <code>Files.write</code>, <code>File.renameTo</code>, <code>File.delete</code></td></tr>
-          <tr><td>Outbound request<span>priority 0</span></td><td>SSRF or blind-confirmation probe</td><td><code>URL.openConnection</code>, <code>InetAddress.getByName</code></td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="caption muted narrow" style="margin-top:24px">Rules resolve only for libraries on your classpath, and reflection boundaries only when your code uses reflection. For APIs it can't see, an optional model pass proposes rules, each labeled a hypothesis. Nothing is guessed silently.</p>
+    <p class="lead">Sinks are chosen from your bytecode, not a handwritten config.</p>
+    <p class="lead-airy muted">Process execution, class definition, expression evaluation, JNDI, JDBC, secondary deserialization, reflection, file write and outbound request, each ranked by priority. Full signatures are in the <a href="https://github.com/MarkLee131/GadgetHunter/blob/modern-scanning/docs/usage.md#automatic-taint-configuration">usage guide</a>.</p>
   </div>
 </section>
 
