@@ -1,43 +1,43 @@
 1
-00:00:03,000 --> 00:00:11,306
-Meet Gadget Hunter. Find Java deserialization candidates, then inspect the evidence behind each result.
+00:00:03,000 --> 00:00:16,808
+GadgetHunter combines static taint analysis, LLM-assisted semantic reachability analysis, and SMT-based path feasibility checking for Java deserialization gadget chains.
 
 2
-00:00:11,306 --> 00:00:19,036
-Start with your application archive and its dependencies. Here, we use a small static-analysis test fixture.
+00:00:16,809 --> 00:00:25,337
+Upload the target application and its dependencies. This demonstration uses a Java test program compiled to bytecode.
 
 3
-00:00:20,819 --> 00:00:29,151
-Set a search budget and choose automatic taint rules. Built-in candidate generation requires no model API key.
+00:00:27,121 --> 00:00:36,616
+Set the search time limit and select automatic taint rules. Candidate generation uses static analysis and does not invoke an LLM.
 
 4
-00:00:31,250 --> 00:00:38,310
-Here is the saved scan of this fixture. Open its details to inspect candidates and coverage limits.
+00:00:38,711 --> 00:00:47,718
+Inspect the saved candidate-generation results and coverage diagnostics. Partial coverage does not rule out additional gadget chains.
 
 5
-00:00:40,125 --> 00:00:48,442
-Review coverage, then follow the ranked clusters. Novel means no catalogued family matched; it is a review priority.
+00:00:49,524 --> 00:00:59,389
+Review the ranked candidate clusters. Novel denotes no match to a catalogued gadget-chain family; it does not establish a new vulnerability.
 
 6
-00:00:55,195 --> 00:01:03,687
-For source analysis, supply candidate chains and matching Java sources. A configured model helps check semantic reachability.
+00:01:06,309 --> 00:01:15,640
+Supply candidate chains and corresponding Java source code for region-based semantic reachability analysis and constraint extraction.
 
 7
-00:01:03,687 --> 00:01:12,818
-Next, we import a saved analysis of a separate, harmless validation fixture. Reports stay in this browser session.
+00:01:15,641 --> 00:01:25,543
+We now import a previously generated report for a separate, benign test case. No new source analysis is executed in this demonstration.
 
 8
-00:01:12,818 --> 00:01:21,667
-Filter by verdict. Feasible means the extracted constraints are satisfiable. It does not prove a working exploit.
+00:01:25,543 --> 00:01:36,760
+FEASIBLE indicates satisfiability of the extracted constraints under the analysis model. It does not establish exploitability in the target environment.
 
 9
-00:01:21,667 --> 00:01:30,856
-Follow the call chain and examine the extracted constraints. Each result keeps its supporting evidence available for review.
+00:01:36,761 --> 00:01:45,948
+Inspect the call chain and extracted constraints to assess the data-flow relationships and path conditions represented by the analysis.
 
 10
-00:01:30,856 --> 00:01:38,818
-Expand the matching source to check the method directly, or open the full evidence record for deeper investigation.
+00:01:45,948 --> 00:01:53,802
+Examine the corresponding method implementation and the complete analysis record to review the basis for the reported result.
 
 11
-00:01:38,818 --> 00:01:47,874
-Export the report for later review. Gadget Hunter connects candidate discovery, semantic checks, and constraint evidence in one workflow.
+00:01:53,802 --> 00:02:02,739
+Export the analysis report as JSON to support manual review, independent validation, and subsequent analysis.

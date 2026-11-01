@@ -2,35 +2,35 @@ GadgetHunter workbench walkthrough
 English narration generated with OpenAI gpt-4o-mini-tts, voice marin.
 Real workbench recording. Static-analysis fixture and a separate saved harmless validation report.
 
-Analyses
-Meet Gadget Hunter. Find Java deserialization candidates, then inspect the evidence behind each result.
+Workflow overview
+GadgetHunter combines static taint analysis, LLM-assisted semantic reachability analysis, and SMT-based path feasibility checking for Java deserialization gadget chains.
 
-01 / Add an archive
-Start with your application archive and its dependencies. Here, we use a small static-analysis test fixture.
+Target artifacts
+Upload the target application and its dependencies. This demonstration uses a Java test program compiled to bytecode.
 
-02 / Configure the search
-Set a search budget and choose automatic taint rules. Built-in candidate generation requires no model API key.
+Candidate generation
+Set the search time limit and select automatic taint rules. Candidate generation uses static analysis and does not invoke an LLM.
 
-03 / Review a saved scan
-Here is the saved scan of this fixture. Open its details to inspect candidates and coverage limits.
+Coverage diagnostics
+Inspect the saved candidate-generation results and coverage diagnostics. Partial coverage does not rule out additional gadget chains.
 
-Prioritize the review
-Review coverage, then follow the ranked clusters. Novel means no catalogued family matched; it is a review priority.
+Candidate triage
+Review the ranked candidate clusters. Novel denotes no match to a catalogued gadget-chain family; it does not establish a new vulnerability.
 
-04 / Add matching source
-For source analysis, supply candidate chains and matching Java sources. A configured model helps check semantic reachability.
+Source-level analysis
+Supply candidate chains and corresponding Java source code for region-based semantic reachability analysis and constraint extraction.
 
-05 / Open saved evidence
-Next, we import a saved analysis of a separate, harmless validation fixture. Reports stay in this browser session.
+Saved analysis report
+We now import a previously generated report for a separate, benign test case. No new source analysis is executed in this demonstration.
 
-06 / Understand the verdict
-Filter by verdict. Feasible means the extracted constraints are satisfiable. It does not prove a working exploit.
+Feasibility result
+FEASIBLE indicates satisfiability of the extracted constraints under the analysis model. It does not establish exploitability in the target environment.
 
-07 / Trace the reasoning
-Follow the call chain and examine the extracted constraints. Each result keeps its supporting evidence available for review.
+Call chain and constraints
+Inspect the call chain and extracted constraints to assess the data-flow relationships and path conditions represented by the analysis.
 
-08 / Inspect the source
-Expand the matching source to check the method directly, or open the full evidence record for deeper investigation.
+Source inspection
+Examine the corresponding method implementation and the complete analysis record to review the basis for the reported result.
 
-09 / Keep the evidence
-Export the report for later review. Gadget Hunter connects candidate discovery, semantic checks, and constraint evidence in one workflow.
+Report export
+Export the analysis report as JSON to support manual review, independent validation, and subsequent analysis.
