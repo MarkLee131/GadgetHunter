@@ -159,7 +159,7 @@ footer .inner{max-width:980px;margin:0 auto}
   <div class="narrow">
     <h1>Hunt new gadget chains.</h1>
     <p class="lead">Not the ones your JDK already killed.</p>
-    <p class="lead-airy muted">Point GadgetHunter at a JAR, Spring Boot fat JAR or WAR. It derives taint rules from the bytecode, searches for deserialization chains, and ranks new routes through your code ahead of rediscovered public chains and routes the scanned build already blocks.</p>
+    <p class="lead-airy muted">Point GadgetHunter at a JAR, Spring Boot fat JAR or WAR. It derives taint rules from the bytecode, searches for deserialization chains, and ranks genuinely new routes ahead of chains you already know and ones your build already blocks.</p>
     <div class="ctas"><a class="btn btn-primary" href="#start">Get started</a><a class="btn btn-secondary" href="https://github.com/MarkLee131/GadgetHunter/tree/modern-scanning">View on GitHub</a></div>
   </div>
   <div class="render terminal" aria-label="Example scan output">
@@ -180,9 +180,9 @@ Review first: scans/cc321/chains.review</pre>
     <h2>Built for people who report 0days.</h2>
     <p class="lead">Finding thousands of paths is easy. Deciding which ten deserve your evening is the work.</p>
     <div class="cols">
-      <div><h3>No handwritten taint config.</h3><p class="muted">Callback roots, sinks, propagation and safe ignores are derived from your classpath. Missing dependencies and unimplemented APIs are reported, and a model can adapt rules to them, labeled as hypotheses.</p></div>
-      <div><h3>Novel, known or dead.</h3><p class="muted">Every candidate is labeled against a catalog of public gadget families and checked for mitigations in the scanned bytecode itself, so vendor backports and shaded copies are judged by what they actually do.</p></div>
-      <div><h3>Real deliverables in.</h3><p class="muted">Spring Boot fat JARs and WARs are split into application and library classes. Multi-release overlays, module-info and classes newer than the target runtime you point it at are dropped and listed, so you know exactly what was not scanned.</p></div>
+      <div><h3>No handwritten taint config.</h3><p class="muted">Callback roots, sinks, propagation and safe ignores are derived from your classpath. Gaps are reported, not guessed.</p></div>
+      <div><h3>Novel, known or dead.</h3><p class="muted">Every candidate is labeled against known gadget families and checked for mitigations in the scanned bytecode, so backports and shaded copies are judged by what they actually do.</p></div>
+      <div><h3>Real deliverables in.</h3><p class="muted">Spring Boot fat JARs and WARs are split into application and library classes. Anything the target runtime can't load is dropped and listed, so you know what was not scanned.</p></div>
     </div>
   </div>
 </section>
@@ -246,10 +246,10 @@ Review first: scans/cc321/chains.review</pre>
   </div>
   <div class="wide">
     <div class="cols four">
-      <div><h3>Novel</h3><p class="muted">No catalogued family's core gadget appears. Reusable triggers like <code>HashMap</code> or <code>BadAttributeValueExpException</code> don't count against it.</p></div>
-      <div><h3>Known</h3><p class="muted">Uses a core gadget from a public family such as CommonsBeanutils, ROME or Groovy. A sanity check, rarely a new report.</p></div>
-      <div><h3>Blocked</h3><p class="muted">The scanned bytecode shows the route is dead, such as <code>AnnotationInvocationHandler</code> since 8u71 or the CC 3.2.2 functor guard.</p></div>
-      <div><h3>Constrained</h3><p class="muted">The effect needs more than the chain, such as a JNDI lookup on 8u191+ that needs a local <code>ObjectFactory</code>, or evidence couldn't be read.</p></div>
+      <div><h3>Novel</h3><p class="muted">No known family's core gadget appears. Shared triggers like <code>HashMap</code> don't count against it.</p></div>
+      <div><h3>Known</h3><p class="muted">Uses a core gadget from a public family. A sanity check, rarely a new report.</p></div>
+      <div><h3>Blocked</h3><p class="muted">The scanned bytecode shows the route is dead, like <code>AnnotationInvocationHandler</code> since 8u71.</p></div>
+      <div><h3>Constrained</h3><p class="muted">The effect needs more than the chain, such as a JNDI lookup that needs a local <code>ObjectFactory</code>.</p></div>
     </div>
   </div>
 </section>
@@ -275,7 +275,7 @@ Review first: scans/cc321/chains.review</pre>
         </tbody>
       </table>
     </div>
-    <p class="caption muted narrow" style="margin-top:24px">Common JDK propagation is applied only where it can't hide an override, and ignores only where a closed-world bytecode check proves the call can't reach user code. Reflection boundaries are added when your code uses reflection. Library rules resolve only when that library is on the classpath. For APIs with no implementation on your classpath, an optional model pass proposes rules, and every candidate that relies on one is labeled as a hypothesis. Objects a callback reads from its own stream stay controlled, so calls on them are followed; a new <code>ObjectInputStream</code> built over controlled bytes is reported as secondary deserialization. Adaptive wrapper rules are added only after an independent bytecode validator proves them.</p>
+    <p class="caption muted narrow" style="margin-top:24px">Rules resolve only for libraries on your classpath, and reflection boundaries only when your code uses reflection. For APIs it can't see, an optional model pass proposes rules, each labeled a hypothesis. Nothing is guessed silently.</p>
   </div>
 </section>
 
@@ -283,7 +283,7 @@ Review first: scans/cc321/chains.review</pre>
   <div class="narrow">
     <h2>Get started.</h2>
     <p class="lead">Python 3.10+ and a JDK 17+ on <code>PATH</code> to run the analysis.</p>
-    <p class="lead-airy muted">Point <code>--java-home</code> at a JDK that matches your target, Java 8, 11, 17 or newer; its class library models that runtime, so you scan the version you actually ship. No API key until the optional analysis stage.</p>
+    <p class="lead-airy muted">Point <code>--java-home</code> at a JDK matching your target, Java 8, 11, 17 or newer, so you scan the version you actually ship. No API key until the optional analysis stage.</p>
   </div>
   <div class="steps">
     <div><h3>Install.</h3>
