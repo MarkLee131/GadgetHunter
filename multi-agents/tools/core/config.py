@@ -31,6 +31,11 @@ class Config:
         self.anthropic_api_key = os.environ.get("ANTHROPIC_API_KEY")
         # JDK home for analysed targets. Caller must set GADGETHUNTER_JAVA_HOME.
         self.java_home = os.environ.get("GADGETHUNTER_JAVA_HOME")
+        # Target classpath (JARs) for the subtype oracle; empty keeps casts UNKNOWN.
+        self.target_classpath = []
+        # Deserialization class filter spec (JEP 290 string or a file path); when
+        # unset, the filter is auto-extracted from target_classpath if possible.
+        self.deserial_filter = None
 
     def set_debug(self, debug_flag: bool):
         self.debug = debug_flag
@@ -67,6 +72,10 @@ class Config:
             api_key = self.anthropic_api_key
             self.llm_api_url = "https://api.anthropic.com/v1/messages"
 
+        elif self.llm_type == "glm":
+            api_key = os.environ.get("ZHIPUAI_API_KEY") or os.environ.get("ZAI_API_KEY")
+            self.llm_api_url = "https://api.z.ai/api/paas/v4"
+
         else:
             raise ValueError(f"Unsupported LLM type: {self.llm_type}")
 
@@ -101,8 +110,8 @@ def load_config(path):
     for key in ("max_chains", "max_fix_attempts", "llm_max_retries", "llm_cache_size"):
         if getattr(config, key) < 0:
             raise ValueError(f"{key} must be nonnegative")
-    if config.llm_type not in {"gpt", "deepseek"}:
-        raise ValueError("Supported CLI providers are gpt and deepseek")
+    if config.llm_type not in {"gpt", "deepseek", "glm"}:
+        raise ValueError("Supported CLI providers are gpt, deepseek and glm")
     return config
 
 def create_default_config(path):

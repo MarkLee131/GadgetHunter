@@ -52,7 +52,7 @@ class RegionBasedCoordinator(BaseAgent):
         # Initialize agents with unified output directory
         self.region_analyzer = RegionAnalyzerAgent(llm_client, root_path, debug)
         self.semantic_agent = SemanticReachabilityAgent(llm_client, root_path, debug)
-        self.path_constraint_agent = PathConstraintAgent(llm_client, debug, output_dir=output_dir)
+        self.path_constraint_agent = PathConstraintAgent(llm_client, debug, output_dir=output_dir, config=config)
         
         self.semantic_agent.cache_size = getattr(config, "llm_cache_size", 256)
         if config is not None:

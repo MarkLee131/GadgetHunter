@@ -81,12 +81,40 @@ class PathConstraintAgent(BaseAgent):
     Responsible for Z3-based constraint solving and path feasibility verification
     """
     
-    def __init__(self, llm_client: LLMClient, debug: bool = False, output_dir: str = "results"):
+    def __init__(self, llm_client: LLMClient, debug: bool = False, output_dir: str = "results", config=None):
         super().__init__(llm_client, debug)
         # prompt_manager is now initialized in BaseAgent
         self.max_fix_attempts = 3
         self.solver_timeout = 30
         self.output_dir = output_dir
+        self.config = config
+        self._oracle = None
+        self._oracle_built = False
+
+    def _subtype_oracle(self):
+        """Lazily build the JVM subtype oracle from the target runtime/classpath.
+
+        Returns None when no target java_home/classpath is configured, in which
+        case cast_compatible constraints stay UNKNOWN (sound default).
+        """
+        if self._oracle_built:
+            return self._oracle
+        self._oracle_built = True
+        cfg = self.config
+        java_home = getattr(cfg, "java_home", None) if cfg else None
+        classpath = getattr(cfg, "target_classpath", None) if cfg else None
+        if not java_home or not classpath:
+            return None
+        java_exe = os.path.join(java_home, "bin", "java")
+        sep = ";" if os.name == "nt" else ":"
+        cp = classpath if isinstance(classpath, str) else sep.join(classpath)
+        try:
+            from tools.analysis.subtype_oracle import SubtypeOracle
+            self._oracle = SubtypeOracle(java_exe, cp)
+        except Exception as exc:
+            self.logger.warning(f"Subtype oracle unavailable: {exc}")
+            self._oracle = None
+        return self._oracle
         
     def verify_path_feasibility(self, region_analysis: Dict[str, Any], 
                               chain_id: int) -> PathFeasibilityResult:
@@ -592,19 +620,154 @@ class PathConstraintAgent(BaseAgent):
         gadgets = [g for r in region_analysis.get("regions", []) for g in r.get("gadgets", [])]
         if not gadgets:
             raise InconclusiveAnalysis("No gadgets were extracted from the chain")
-        for gadget in gadgets:
+        # Each gadget is its own method frame: its local variables (this, argN,
+        # ret, field.x) are scoped by frame index so names do not collide
+        # across gadgets (SSA-style per-frame versioning). Inter-gadget data
+        # flow is linked explicitly in _add_inter_gadget_flows.
+        for frame, gadget in enumerate(gadgets):
             summary = gadget.get("code_summary") if isinstance(gadget, dict) else None
             if summary and summary.get("error"):
                 raise RuntimeError(summary["error"])
             if not summary or summary.get("inconclusive"):
                 raise InconclusiveAnalysis((summary or {}).get("inconclusive", "A gadget has no usable constraint summary"))
-            self._extract_constraints_from_summary(summary, json_data)
+            self._extract_constraints_from_summary(summary, json_data, frame)
         if not any(json_data.values()):
             raise InconclusiveAnalysis("No constraints were extracted from gadget summaries")
         self._add_inter_gadget_flows(region_analysis, json_data)
+        self._resolve_casts(json_data)
+        self._apply_deserialization_filter(region_analysis, json_data)
         return json_data
 
-    def _extract_constraints_from_summary(self, code_summary, json_data):
+    def _deserialization_filter(self):
+        """Lazily build the target deserialization filter: explicit override
+        (config.deserial_filter) first, else auto-extract from the classpath."""
+        if getattr(self, "_deser_filter_built", False):
+            return self._deser_filter
+        self._deser_filter_built = True
+        self._deser_filter = None
+        cfg = self.config
+        try:
+            from tools.analysis import deserialization_filter as df
+            spec = getattr(cfg, "deserial_filter", None) if cfg else None
+            flt = df.load_filter(spec) if spec else None
+            if flt is None and cfg and getattr(cfg, "target_classpath", None):
+                flt = df.from_classpath(cfg.target_classpath)
+            self._deser_filter = flt
+        except Exception as exc:
+            self.logger.warning(f"Deserialization filter unavailable: {exc}")
+        return self._deser_filter
+
+    def _apply_deserialization_filter(self, region_analysis, json_data):
+        """Filter-aware feasibility: if the target's deserialization filter
+        denies a class the chain must deserialize, the path is NOT_FEASIBLE on
+        that build (prune via always_throw). Classes the filter does not cover,
+        or when no filter is configured, are left unconstrained.
+        """
+        flt = self._deserialization_filter()
+        if flt is None or flt.empty:
+            return
+        # Classes actually deserialized = owners of a deserialization callback
+        # in the chain (readObject/readResolve/readExternal).
+        owners = set()
+        cb = re.compile(r'<([A-Za-z_][\w.$]*)\s*:\s*'
+                        r'(?:void readObject|java\.lang\.Object readResolve|void readExternal)')
+        gadgets = [g for r in region_analysis.get("regions", []) for g in r.get("gadgets", [])]
+        for g in gadgets:
+            sig = g.get("method_signature", "") or g.get("raw_gadget", "") if isinstance(g, dict) else ""
+            owners.update(cb.findall(sig))
+        for edge in region_analysis.get("original_chain", []) or []:
+            owners.update(cb.findall(edge))
+        if any(flt.decide(c) == "deny" for c in owners):
+            json_data["guard"].append("always_throw")  # filter blocks a required class
+
+    def _resolve_casts(self, json_data):
+        """Decide cast_compatible constraints using the JVM subtype oracle
+        (closed-world, authoritative), before translation.
+
+        A cast is feasible iff one operand is a subtype of the other. Resolved
+        feasible casts are dropped (they add no constraint); resolved impossible
+        casts prune the path (always_throw → NOT_FEASIBLE); casts whose classes
+        cannot be resolved are left in place so the translator yields UNKNOWN
+        rather than guessing.
+        """
+        oracle = self._subtype_oracle()
+        if oracle is None or not oracle.available:
+            return
+        # Variable -> declared class, from type() guards and typed vars.
+        typemap = {}
+        for g in json_data.get("guard", []):
+            m = re.match(r'type\(([^,]+),\s*([^)]+)\)\s*$', g.strip()) if isinstance(g, str) else None
+            if m:
+                typemap[m.group(1).strip()] = m.group(2).strip()
+        # Simple-name -> fully-qualified name, harvested from every FQN mentioned.
+        fqn_map = {}
+        def note_fqn(cls):
+            cls = cls.strip()
+            if "." in cls and re.fullmatch(r'[A-Za-z_][\w.$]*', cls):
+                fqn_map.setdefault(cls.split(".")[-1], cls)
+        for cls in typemap.values():
+            note_fqn(cls)
+        for v in json_data.get("vars", []):
+            if isinstance(v, dict):
+                c = str(v.get("constraint", "")).strip()
+                c = c[len("instanceof "):].strip() if c.startswith("instanceof ") else c
+                note_fqn(c)
+                if c and v.get("name"):
+                    typemap.setdefault(str(v["name"]), c)
+        for r in json_data.get("runtime", []):
+            if isinstance(r, str):
+                for m in re.findall(r'[A-Za-z_][\w.$]*(?:\.[A-Za-z_][\w.$]*)+', r):
+                    note_fqn(m)
+
+        def resolve(tok):
+            tok = tok.strip()
+            if re.match(r'g\d+_', tok):                 # scoped variable
+                cls = typemap.get(tok)
+                return self._as_fqn(cls, fqn_map) if cls else None
+            return self._as_fqn(tok, fqn_map)           # class literal (simple or qualified)
+
+        kept, extra_guards = [], []
+        for r in json_data.get("runtime", []):
+            if isinstance(r, str) and r.startswith("cast_compatible(") and "," in r:
+                a, b = [p.strip() for p in r[len("cast_compatible("):-1].split(",", 1)]
+                ca, cb = resolve(a), resolve(b)
+                if ca and cb:
+                    feasible = oracle.cast_feasible(ca, cb)
+                    if feasible is True:
+                        continue                         # drop: cast is possible
+                    if feasible is False:
+                        extra_guards.append("always_throw")  # prune: impossible cast
+                        continue
+                # unresolved operand → leave in place → translator yields UNKNOWN
+            kept.append(r)
+        json_data["runtime"] = kept
+        if extra_guards:
+            json_data["guard"].extend(extra_guards)
+
+    @staticmethod
+    def _as_fqn(cls, fqn_map):
+        if not cls:
+            return None
+        cls = cls.strip()
+        if "." in cls:
+            return cls
+        return fqn_map.get(cls)  # qualify a simple name if we have seen its FQN
+
+    # Method-local variable roots (paper §3.5.1 kinds: this | argN | field.x | ret).
+    _SCOPE_ROOT_RE = re.compile(r'\b(this|arg\d+|ret|field)\b')
+
+    @classmethod
+    def _scope_token(cls, text, frame):
+        """Prefix method-local variable roots with the gadget frame id.
+
+        Only the canonical local kinds are rewritten; class names and literals
+        are left intact (their segments do not match the root alternation).
+        """
+        if not isinstance(text, str):
+            return text
+        return cls._SCOPE_ROOT_RE.sub(lambda m: f"g{frame}_{m.group(1)}", text)
+
+    def _extract_constraints_from_summary(self, code_summary, json_data, frame=0):
         summary = code_summary.get("summary")
         constraints = self._extract_json_from_response(summary) if isinstance(summary, str) else None
         if not isinstance(constraints, dict):
@@ -616,7 +779,20 @@ class PathConstraintAgent(BaseAgent):
             for value in values:
                 if not self._is_valid_constraint(value, key):
                     raise InconclusiveAnalysis(f"Unsupported {key} constraint: {value!r}")
-            json_data[key].extend(values)
+            json_data[key].extend(self._scope_value(value, key, frame) for value in values)
+
+    def _scope_value(self, value, key, frame):
+        """Rewrite a constraint's method-local variable references to the frame."""
+        if key == "vars" and isinstance(value, dict):
+            scoped = dict(value)
+            # Scope the variable name/kind so each frame's locals are distinct.
+            ref = value.get("kind") or value.get("name")
+            if isinstance(ref, str) and ref:
+                scoped["name"] = self._scope_token(ref, frame) if self._SCOPE_ROOT_RE.search(ref) else f"g{frame}_{ref}"
+            return scoped
+        if isinstance(value, str):
+            return self._scope_token(value, frame)
+        return value
 
     def _extract_constraints_with_patterns(self, text: str) -> Optional[Dict[str, Any]]:
         """
@@ -822,8 +998,13 @@ class PathConstraintAgent(BaseAgent):
                     guard_patterns = [
                         r'^nonnull\([^)]+\)$',
                         r'^type\([^,]+,[^)]+\)$',
-                        r'^cmp\([^=]+==[^)]+\)$',
-                        r'^range\([^<]+<[^<]+<[^)]+\)$',
+                        # cmp accepts equality and numeric ordering operators
+                        r'^cmp\(\s*\S.*?\s*(==|!=|>=|<=|>|<)\s*.*?\S\s*\)$',
+                        # range accepts one-sided (a<=x) or two-sided (a<x<b), with < or <=
+                        r'^range\(\s*[^<>()]+\s*(<=|<)\s*[^<>()]+\s*((<=|<)\s*[^<>()]+\s*)?\)$',
+                        # collection/map membership, modelled with the SMT array theory
+                        r'^(not_)?contains\([^,()]+,[^,()]+\)$',
+                        r'^(non)?empty\([^,()]+\)$',
                         r'^(always_throw|early_return)$'
                     ]
                     return any(re.match(pattern, constraint.strip()) for pattern in guard_patterns)

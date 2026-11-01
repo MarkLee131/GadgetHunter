@@ -374,6 +374,26 @@ class DeepSeekClient(LLMClient):
             return {'content': content, 'usage': {'prompt_tokens': response.usage.prompt_tokens if response.usage else 0, 'completion_tokens': response.usage.completion_tokens if response.usage else 0, 'total_tokens': response.usage.total_tokens if response.usage else 0}}
 
 
+class GLMClient(DeepSeekClient):
+    """Z.ai GLM client (OpenAI-compatible endpoint).
+
+    glm-4.5/4.6 run a server-side thinking phase that can be turned off, so the
+    answer lands in message.content directly; it is disabled on those to match
+    the GPT and DeepSeek clients. glm-5.x always think and reject disabling it,
+    so they are left untouched; their default completion budget already covers
+    the reasoning plus the answer.
+    """
+
+    _DISABLE_THINKING = {"glm-4.5", "glm-4.6", "glm-4.5-air"}
+
+    def _make_api_call(self, messages: list, **kwargs) -> Dict[str, Any]:
+        if self.model in self._DISABLE_THINKING:
+            extra_body = dict(kwargs.get("extra_body") or {})
+            extra_body.setdefault("thinking", {"type": "disabled"})
+            kwargs["extra_body"] = extra_body
+        return super()._make_api_call(messages, **kwargs)
+
+
 class QwenClient(LLMClient):
     """Alibaba Qwen client."""
     
@@ -422,6 +442,8 @@ def get_llm_client(config: Dict[str, Any], usage_tracker: Optional[APIUsageTrack
         return GPTClient(config, usage_tracker)
     elif config["type"] == "deepseek":
         return DeepSeekClient(config, usage_tracker)
+    elif config["type"] == "glm":
+        return GLMClient(config, usage_tracker)
     elif config["type"] == "qwen":
         return QwenClient(config, usage_tracker)
     elif config["type"] == "dummy":

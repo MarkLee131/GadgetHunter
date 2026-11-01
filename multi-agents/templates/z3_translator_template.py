@@ -24,13 +24,22 @@ def gen_var_init():
         # Type system functions
         TypeF = Function('Type', Obj, StringSort())
         TypeOf = Function('TypeOf', Obj, ClassName)
-        
+        # Cast feasibility (cast_compatible) is decided against the real class
+        # hierarchy by the JVM subtype oracle in path_constraint_agent, before
+        # translation; the translator needs no subtype relation here.
+        NotAnonymous = Function('NotAnonymous', StringSort(), BoolSort())
+
+        # Data-flow is modelled as taint propagation (value-flow), NOT object
+        # identity / must-alias: a flow edge must not force the two endpoints to
+        # be the same typed object.
+        Tainted = Function('Tainted', Obj, BoolSort())
+
         # Runtime feasibility functions (NEW)
         Serializable = Function('Serializable', ClassName, BoolSort())
         ReflectionAccessible = Function('ReflectionAccessible', ClassName, StringSort(), BoolSort())
         ModuleOpens = Function('ModuleOpens', Module, Package, BoolSort())
         ClassAvailable = Function('ClassAvailable', ClassName, BoolSort())
-        
+
         s = Solver()
         z = {}   # cache
         def v(name, *, srt='obj'):
@@ -45,14 +54,20 @@ def gen_var_init():
                     z[name] = Const(name, Module)
                 elif srt == 'package':
                     z[name] = Const(name, Package)
+                elif srt == 'set':
+                    # Collections/maps modelled with the SMT theory of arrays
+                    # (Set(Obj) = Array(Obj, Bool)); membership is IsMember.
+                    z[name] = Const(name, SetSort(Obj))
                 else:
                     z[name] = Const(name, Obj)
             return z[name]
     """)
 
 def emit_var_constraint(name, cons):
+    import re as _re
     if not isinstance(cons, str):
         return f"# unknown var-constraint (non-string): {cons}"
+    cons = cons.strip()
     if cons == "nonnull":
         return f"s.add(v('{name}') != NullO if v('{name}').sort()==Obj else v('{name}', srt='str') != NULL_S)"
     elif cons.startswith("=="):
@@ -62,6 +77,15 @@ def emit_var_constraint(name, cons):
         # Type declarations - handled in variable creation, no constraint needed
         return f"# {name} declared as {cons}"
     else:
+        # Type constraints mirror the type(x,Cls) guard: assert the runtime type.
+        # Accept "instanceof Cls" or a bare fully-qualified class name.
+        cls = None
+        if cons.startswith("instanceof "):
+            cls = cons[len("instanceof "):].strip()
+        elif "." in cons and _re.fullmatch(r'[A-Za-z_][\w.$]*', cons):
+            cls = cons
+        if cls:
+            return f"s.add(TypeF(v('{name}')) == StringVal('{sanitize_class_name(cls)}'))"
         return f"# unknown var-constraint: {cons}"
 
 # ---------- main translator ----------
@@ -160,8 +184,10 @@ def generate_z3_script_from_json(j):
             # Sanitize variable names
             src = sanitize_var_name(src)
             dst = sanitize_var_name(dst)
-            
-            out.append(f"s.add(v('{src}') == v('{dst}'))")
+
+            # Taint propagation, not identity: flow carries attacker-control
+            # along the edge without aliasing the endpoints' types/values.
+            out.append(f"s.add(Implies(Tainted(v('{src}')), Tainted(v('{dst}'))))")
             stats["flow_processed"] += 1
             
         except Exception as e:
@@ -283,37 +309,88 @@ def process_guard_constraint(g, out):
             return True
             
         elif g.startswith("cmp("):
+            import re as _re
             inner = g[4:-1]
-            if "==" not in inner:
+            # Detect the comparison operator; check two-character operators first.
+            op = next((c for c in ("==", "!=", ">=", "<=", ">", "<") if c in inner), None)
+            if op is None:
                 out.append(f"# skipped malformed cmp guard: {g}")
                 return False
-            left, right = [p.strip() for p in inner.split('==', 1)]
-            if not left:
-                out.append(f"# skipped cmp guard with empty left side: {g}")
+            left, right = [p.strip() for p in inner.split(op, 1)]
+            if not left or not right:
+                out.append(f"# skipped cmp guard with empty side: {g}")
                 return False
             left = sanitize_var_name(left)
-            right = right.strip('"\'')  # Remove quotes
-            out.append(f"s.add(v('{left}', srt='str') == StringVal('{right}'))")
-            return True
+            rstr = right.strip('"\'')
+            if _re.fullmatch(r'-?\d+', rstr):
+                # Numeric comparison: model the left side as an integer.
+                out.append(f"s.add(v('{left}', srt='int') {op} IntVal({int(rstr)}))")
+                return True
+            if op in ("==", "!="):
+                # String (in)equality against a literal.
+                out.append(f"s.add(v('{left}', srt='str') {op} StringVal('{rstr}'))")
+                return True
+            out.append(f"# skipped cmp guard with non-numeric ordering operand: {g}")
+            return False
             
         elif g.startswith("range("):
-            inner = g[6:-1]
-            parts = inner.split("<")
-            if len(parts) != 3:
-                out.append(f"# skipped malformed range guard: {g}")
+            import re as _re
+            inner = g[6:-1].strip()
+            # Split keeping the operators: "0<=len<10" -> ['0','<=','len','<','10'];
+            # "0<=length" -> ['0','<=','length'].
+            toks = _re.split(r'\s*(<=|<)\s*', inner)
+            is_int = lambda t: bool(_re.fullmatch(r'-?\d+', t))
+            if len(toks) == 3:
+                a, op, b = toks[0].strip(), toks[1], toks[2].strip()
+                if is_int(a) and not is_int(b):          # bound OP var
+                    var = sanitize_var_name(b)
+                    out.append(f"s.add(IntVal({int(a)}) {op} v('{var}', srt='int'))")
+                    return True
+                if is_int(b) and not is_int(a):          # var OP bound
+                    var = sanitize_var_name(a)
+                    out.append(f"s.add(v('{var}', srt='int') {op} IntVal({int(b)}))")
+                    return True
+                out.append(f"# skipped range guard with ambiguous operands: {g}")
                 return False
-            try:
-                low, var, high = parts
-                low_val = int(low.strip())
-                high_val = int(high.strip())
+            if len(toks) == 5 and is_int(toks[0].strip()) and is_int(toks[4].strip()):
+                low, op1, var, op2, high = toks
                 var = sanitize_var_name(var.strip())
-                out.append(f"s.add(IntVal({low_val}) < v('{var}', srt='int'))")
-                out.append(f"s.add(v('{var}', srt='int') < IntVal({high_val}))")
+                out.append(f"s.add(IntVal({int(low.strip())}) {op1} v('{var}', srt='int'))")
+                out.append(f"s.add(v('{var}', srt='int') {op2} IntVal({int(high.strip())}))")
                 return True
-            except ValueError:
-                out.append(f"# skipped range guard with non-integer bounds: {g}")
-                return False
+            out.append(f"# skipped malformed range guard: {g}")
+            return False
                 
+        elif g.startswith("contains(") or g.startswith("not_contains("):
+            # Collection/map membership via the SMT theory of arrays (Set = Array(Obj,Bool)).
+            neg = g.startswith("not_contains(")
+            inner = g[g.index("(") + 1:-1]
+            if "," not in inner:
+                out.append(f"# skipped malformed membership guard: {g}")
+                return False
+            coll, elem = [p.strip() for p in inner.split(",", 1)]
+            if not coll or not elem:
+                out.append(f"# skipped membership guard with empty operand: {g}")
+                return False
+            # A collection has its own set view ('<name>__set') so it never clashes
+            # with an object-sorted use of the same name (e.g. nonnull(coll)).
+            coll = sanitize_var_name(coll) + "__set"
+            elem = sanitize_var_name(elem)
+            mem = f"IsMember(v('{elem}', srt='obj'), v('{coll}', srt='set'))"
+            out.append(f"s.add({'Not(' + mem + ')' if neg else mem})")
+            return True
+
+        elif g.startswith("empty(") or g.startswith("nonempty("):
+            neg = g.startswith("nonempty(")
+            inner = g[g.index("(") + 1:-1].strip()
+            if not inner:
+                out.append(f"# skipped empty guard with no operand: {g}")
+                return False
+            coll = sanitize_var_name(inner) + "__set"
+            eq = f"v('{coll}', srt='set') == EmptySet(Obj)"
+            out.append(f"s.add({'Not(' + eq + ')' if neg else eq})")
+            return True
+
         elif g in ("always_throw", "early_return"):
             out.append("s.add(False)  # path pruned")
             return True
@@ -347,10 +424,10 @@ def sanitize_var_name(name):
 def sanitize_class_name(name):
     """
     Sanitize class name for Z3
-    
+
     Args:
         name: Class name string
-        
+
     Returns:
         Sanitized class name
     """
@@ -358,6 +435,19 @@ def sanitize_class_name(name):
     # Allow dots for package names
     sanitized = re.sub(r'[^a-zA-Z0-9_.]', '_', str(name))
     return sanitized if sanitized else 'UnknownClass'
+
+def _type_expr(tok):
+    """Render a cast/type operand as a Z3 type-name expression.
+
+    A class literal (qualified name, or a single CamelCase identifier) becomes
+    a StringVal; a variable reference (this, argN, field.x, lowercase name)
+    becomes TypeF(v(name)) so it links to type()/typed-var constraints.
+    """
+    import re
+    tok = str(tok).strip()
+    if ('.' in tok and re.fullmatch(r'[A-Za-z_][\w.$]*', tok)) or re.fullmatch(r'[A-Z]\w*', tok):
+        return f"StringVal('{sanitize_class_name(tok)}')"
+    return f"TypeF(v('{sanitize_var_name(tok)}'))"
 
 def process_runtime_constraint(r, out):
     """
@@ -408,20 +498,22 @@ def process_runtime_constraint(r, out):
             return True
             
         elif r.startswith("cast_compatible("):
-            inner = r[16:-1]
-            if "," in inner:
-                src_type, dst_type = [p.strip() for p in inner.split(",", 1)]
-                src_type = sanitize_class_name(src_type)
-                dst_type = sanitize_class_name(dst_type)
-                out.append(f"# unsupported cast compatibility: {src_type} -> {dst_type}")
-                return False
-            else:
-                out.append(f"# skipped malformed cast_compatible: {r}")
-                return False
-                
-        elif r == "not_anonymous_class(obj)":
-            out.append("# unsupported named-class constraint")
+            # Sound cast modeling requires the actual subtype relation seeded
+            # from the class hierarchy (closed-world, TPO-DP style). Until those
+            # ground facts are wired in, treat cast_compatible as unsupported so
+            # an undecided cast yields UNKNOWN rather than a free-variable sat.
+            out.append(f"# unsupported cast compatibility (pending hierarchy facts): {r}")
             return False
+
+        elif r.startswith("not_anonymous_class("):
+            obj = r[len("not_anonymous_class("):-1].strip()
+            if not obj:
+                out.append(f"# skipped not_anonymous_class with empty operand: {r}")
+                return False
+            # An attacker can always supply a named (non-anonymous) class, so
+            # this is satisfiable; assert it over the object's type name.
+            out.append(f"s.add(NotAnonymous({_type_expr(obj)}))")
+            return True
             
         else:
             out.append(f"# unknown runtime constraint: {r}")

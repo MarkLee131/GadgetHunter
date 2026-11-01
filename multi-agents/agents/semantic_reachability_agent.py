@@ -216,14 +216,28 @@ class SemanticReachabilityAgent(BaseAgent):
 
     
     def _parse_reachability_response(self, response: str, context_info: str = "") -> Dict[str, Any]:
-        """Parse LLM response for reachability analysis - simple REACHABLE|UNREACHABLE format"""
+        """Parse LLM response for reachability analysis.
+
+        The verdict must lead the response: a REACHABLE/UNREACHABLE token,
+        optionally wrapped in markdown emphasis and followed by a parenthetical
+        reason. Anchoring at the start keeps a keyword embedded in a later
+        explanation from being misread as the decision, while still tolerating
+        reasoning models that append their rationale after the verdict.
+        """
         if isinstance(response, str):
-            # Accept a decision only, never keywords embedded in explanations.
-            match = re.fullmatch(r"(REACHABLE|UNREACHABLE)(?:\s*\((.*)\))?", response.strip(), re.S)
+            # The verdict must lead the response and be the whole first line,
+            # optionally wrapped in markdown emphasis and followed by a single
+            # parenthetical reason; a reasoning block may follow on later lines.
+            # Trailing inline text ("UNREACHABLE extra") or a hedge ("REACHABLE
+            # or UNREACHABLE") is ambiguous and must NOT be parsed as a verdict.
+            match = re.match(
+                r"\**\s*(REACHABLE|UNREACHABLE)\b\**\s*(?:\(([^\n]*?)\))?\s*(?:\n|$)",
+                response.strip(),
+            )
             if match:
                 return {
                     "reachable": match[1] == "REACHABLE",
-                    "reasoning": match[2] or f"Method transition is {match[1].lower()}",
+                    "reasoning": (match[2] or "").strip() or f"Method transition is {match[1].lower()}",
                 }
         return {"reachable": None, "reasoning": "Missing or ambiguous reachability decision"}
 

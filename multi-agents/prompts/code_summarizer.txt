@@ -13,9 +13,23 @@ Return strict JSON with vulnerability-oriented semantics and runtime feasibility
            src,dst ∈ {this , argN , field.x , ret}
 
 - guard  : list of path predicates, record **only if violation always blocks
-           execution**.  Allowed forms  
-           nonnull(x) | type(x,Cls) | cmp(a=="CONST") | range(l<x<h)
-           | always_throw | early_return | ...
+           execution**.  Use ONLY these forms (no other predicate names):
+           nonnull(x) | type(x,Cls) | cmp(a OP b) | range(lo<x<hi) | range(lo<=x)
+           | range(x<hi) | contains(C,X) | not_contains(C,X) | empty(C)
+           | nonempty(C) | always_throw | early_return
+           where OP is one of  ==  !=  >  <  >=  <=
+           Map every informal condition into one of these. Examples:
+             map/collection contains a key/element  -> contains(map, key)
+             map/collection does NOT contain it     -> not_contains(map, key)
+             collection/array is empty              -> empty(x)
+             collection/array is non-empty          -> nonempty(x)
+             length at least 1                      -> cmp(x.length>=1)
+             value equals a constant                -> cmp(a=="CONST")
+             value within bounds                    -> range(0<=x<16)
+           Use contains/not_contains/empty/nonempty for membership and
+           emptiness (NOT cmp with a method call like containsKey(...)).
+           If a blocking condition cannot be expressed in these forms, OMIT it
+           rather than inventing a new predicate name.
 
 - runtime: list of JVM-level feasibility constraints (NEW - CRITICAL for Java 17+)
            reflection_accessible(ClassName.fieldName) | serializable(ObjectType)

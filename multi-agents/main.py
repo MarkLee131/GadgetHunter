@@ -23,6 +23,12 @@ def build_parser():
     parser.add_argument("--model", help="Override the configured model")
     parser.add_argument("--output-dir", help="Parent directory for new runs")
     parser.add_argument("--solver-timeout", type=int, help="Seconds allowed per solver process")
+    parser.add_argument("--java-home", help="Target JDK home; enables the subtype oracle for sound cast feasibility")
+    parser.add_argument("--target-classpath", action="append", default=[],
+                        help="Target JAR/dir on the analysed classpath (repeatable); feeds the subtype oracle")
+    parser.add_argument("--deserial-filter",
+                        help="Deserialization class filter: a JEP 290 pattern string or a file; "
+                             "overrides auto-extraction from the classpath")
     parser.add_argument("--resume", "-r", help="Existing run directory; inputs and settings must match")
     parser.add_argument("--rebuild", help="Rebuild legacy reports from a results directory without API calls")
     parser.add_argument("--check", action="store_true", help="Validate inputs and show duplicate counts without API calls")
@@ -50,10 +56,15 @@ def main(argv=None):
             parser.error("--chains-file and --project-root are required for analysis")
         config = load_config(args.config) if args.config else Config()
         for arg, field in (("debug", "debug"), ("model", "llm_model"), ("output_dir", "output_dir"),
-                           ("max_chains", "max_chains"), ("solver_timeout", "solver_timeout")):
+                           ("max_chains", "max_chains"), ("solver_timeout", "solver_timeout"),
+                           ("java_home", "java_home")):
             value = getattr(args, arg)
             if value is not None:
                 setattr(config, field, value)
+        if getattr(args, "target_classpath", None):
+            config.target_classpath = args.target_classpath
+        if getattr(args, "deserial_filter", None):
+            config.deserial_filter = args.deserial_filter
         if config.max_chains < 0 or config.solver_timeout <= 0:
             raise ValueError("--max-chains must be nonnegative and --solver-timeout must be positive")
         config.set_project_info(str(Path(args.project_root).resolve()))

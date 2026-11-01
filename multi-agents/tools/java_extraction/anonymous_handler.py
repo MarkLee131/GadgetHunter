@@ -170,11 +170,18 @@ def extract_inner_class_code(class_name: str, project_root: str = "") -> Dict[st
     parts = class_name.split('$')
     outer_class = parts[0]
     inner_class_name = parts[1]
-    
+
     # Skip if it's a numeric inner class (anonymous class)
     if inner_class_name.isdigit():
         return {'error': f'This appears to be an anonymous class, use guess_anonymous_class_context instead: {class_name}'}
-    
+
+    # Method-local classes are named <ordinal><SimpleName> by javac (JLS 13.1),
+    # e.g. Outer$1PooledConnectionResourcePoolManager or Spliterators$1Adapter.
+    # The source declares the bare SimpleName, so strip the leading ordinal.
+    import re as _re
+    _local = _re.match(r'^\d+([A-Za-z_]\w*)$', inner_class_name)
+    search_name = _local.group(1) if _local else inner_class_name
+
     # 2. Find the outer class file
     outer_class_file = find_class_file(outer_class, project_root)
     
@@ -195,23 +202,23 @@ def extract_inner_class_code(class_name: str, project_root: str = "") -> Dict[st
         import re
         
         # Pattern for regular inner class: "class InnerName"
-        inner_class_pattern = rf'\b(?:public\s+|private\s+|protected\s+)?(?:static\s+)?class\s+{re.escape(inner_class_name)}\b'
-        
+        inner_class_pattern = rf'\b(?:public\s+|private\s+|protected\s+)?(?:static\s+)?class\s+{re.escape(search_name)}\b'
+
         # Pattern for static nested class: "static class NestedName"
-        static_nested_pattern = rf'\b(?:public\s+|private\s+|protected\s+)?static\s+class\s+{re.escape(inner_class_name)}\b'
-        
+        static_nested_pattern = rf'\b(?:public\s+|private\s+|protected\s+)?static\s+class\s+{re.escape(search_name)}\b'
+
         found_classes = []
-        
+
         for i, line in enumerate(lines):
             line_stripped = line.strip()
-            
+
             # Check for inner class declaration
             if re.search(inner_class_pattern, line_stripped) or re.search(static_nested_pattern, line_stripped):
                 # Find the class body using tree-sitter for accurate extraction
-                class_info = _extract_class_body_with_tree_sitter(outer_class_file, inner_class_name, i + 1)
+                class_info = _extract_class_body_with_tree_sitter(outer_class_file, search_name, i + 1)
                 if class_info:
                     found_classes.append(class_info)
-        
+
         if not found_classes:
             return {'error': f'Inner class "{inner_class_name}" not found in: {outer_class_file}'}
         
