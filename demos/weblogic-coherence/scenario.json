@@ -1,0 +1,65 @@
+{
+  "url": "http://127.0.0.1:8899/index.html",
+  "viewport": { "width": 1280, "height": 680 },
+  "scale": 1.5,
+  "brandColor": "#0066cc",
+  "highlightClicks": true,
+  "showKeys": false,
+  "gapAfterVoice": 0.8,
+  "outroHold": 1,
+  "voice": {
+    "engine": "openai",
+    "model": "gpt-4o-mini-tts",
+    "voice": "marin",
+    "speed": 1,
+    "instructions": "Narrate an academic software demonstration for software engineering and information security researchers. Use a neutral, precise, measured tone with natural sentence pauses. Avoid promotional emphasis. Pronounce GadgetHunter as Gadget Hunter. Read CVE as the letters C V E. Enunciate deserialization, reflection, and extractor clearly."
+  },
+  "steps": [
+    {
+      "label": "Target and model",
+      "say": "GadgetHunter evaluates each Coherence extractor from WebLogic 14.1.1 against two default WebLogic deserialization filters.",
+      "actions": [
+        { "type": "waitFor", "selector": "#ue-row" },
+        { "type": "highlight", "selector": "#filter-table thead", "ms": 1200 }
+      ]
+    },
+    {
+      "label": "Reachable sink",
+      "say": "UniversalExtractor's extract method resolves a method by name from its deserialized fields and invokes it by reflection.",
+      "actions": [
+        { "type": "highlight", "selector": "#ue-sink", "ms": 1800 }
+      ]
+    },
+    {
+      "label": "The 14.1.1 filter",
+      "say": "On the 14.1.1 GA filter, ReflectionExtractor is denied, but UniversalExtractor is not; it passes.",
+      "actions": [
+        { "type": "highlight", "selector": "#re-1411", "ms": 1300 },
+        { "type": "highlight", "selector": "#ue-1411", "ms": 1600 }
+      ]
+    },
+    {
+      "label": "The 15.1.1 filter",
+      "say": "On the current 15.1.1 filter, UniversalExtractor is denied; Oracle blacklisted it after the 14.1.1 release.",
+      "actions": [
+        { "type": "highlight", "selector": "#ue-1511", "ms": 1800 }
+      ]
+    },
+    {
+      "label": "Rediscovered gadget",
+      "say": "The tool reproduces the known UniversalExtractor gadget, CVE-2020-2883, validating detection against ground truth.",
+      "actions": [
+        { "type": "scroll", "selector": "#rediscovery", "offset": 180 },
+        { "type": "highlight", "selector": "#rediscovery", "ms": 1800 }
+      ]
+    },
+    {
+      "label": "Scope",
+      "say": "This is a patched vulnerability, not a 0-day. The analysis checks reachability and the filter decision, not execution.",
+      "actions": [
+        { "type": "scroll", "selector": "#framing", "offset": 260 },
+        { "type": "highlight", "selector": "#framing", "ms": 1800 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+1
+00:00:03,000 --> 00:00:13,328
+GadgetHunter evaluates each Coherence extractor from WebLogic 14.1.1 against two default WebLogic deserialization filters.
+
+2
+00:00:13,329 --> 00:00:22,208
+UniversalExtractor's extract method resolves a method by name from its deserialized fields and invokes it by reflection.
+
+3
+00:00:22,208 --> 00:00:29,853
+On the 14.1.1 GA filter, ReflectionExtractor is denied, but UniversalExtractor is not; it passes.
+
+4
+00:00:29,853 --> 00:00:39,870
+On the current 15.1.1 filter, UniversalExtractor is denied; Oracle blacklisted it after the 14.1.1 release.
+
+5
+00:00:39,871 --> 00:00:51,519
+The tool reproduces the known UniversalExtractor gadget, CVE-2020-2883, validating detection against ground truth.
+
+6
+00:00:51,519 --> 00:01:00,772
+This is a patched vulnerability, not a 0-day. The analysis checks reachability and the filter decision, not execution.

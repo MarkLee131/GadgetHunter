@@ -1,0 +1,21 @@
+GadgetHunter · WebLogic Coherence filter rediscovery
+English narration generated with OpenAI gpt-4o-mini-tts, voice marin.
+Static filter-model evaluation of real WebLogic 14.1.1 Coherence bytecode against the 14.1.1 and 15.1.1 default serial filters. Known, patched CVEs; no payload is executed.
+
+Target and model
+GadgetHunter evaluates each Coherence extractor from WebLogic 14.1.1 against two default WebLogic deserialization filters.
+
+Reachable sink
+UniversalExtractor's extract method resolves a method by name from its deserialized fields and invokes it by reflection.
+
+The 14.1.1 filter
+On the 14.1.1 GA filter, ReflectionExtractor is denied, but UniversalExtractor is not; it passes.
+
+The 15.1.1 filter
+On the current 15.1.1 filter, UniversalExtractor is denied; Oracle blacklisted it after the 14.1.1 release.
+
+Rediscovered gadget
+The tool reproduces the known UniversalExtractor gadget, CVE-2020-2883, validating detection against ground truth.
+
+Scope
+This is a patched vulnerability, not a 0-day. The analysis checks reachability and the filter decision, not execution.
