@@ -1,0 +1,97 @@
+{
+  "generated": "2026-11-02",
+  "coherence_jar": "coherence-14.1.1.jar",
+  "coherence_version": "14.1.1.0.0",
+  "filters": {
+    "wl_1411": {
+      "label": "WebLogic 14.1.1.0.0 GA",
+      "note": "default serialFilter, blacklist-only, extracted from WebLogicFilterConfig (class dated 2020-03-16, pre April-2020 CPU)"
+    },
+    "wl_1511": {
+      "label": "WebLogic 15.1.1.0.0",
+      "note": "default serialFilter, current build"
+    }
+  },
+  "legend": {
+    "deny": "the filter rejects this class during resolveClass",
+    "allow": "an explicit allow rule matches",
+    "unknown": "no rule matches; under a blacklist-only filter the class is accepted (passes)"
+  },
+  "rows": [
+    {
+      "class": "com.tangosol.util.extractor.ReflectionExtractor",
+      "short": "ReflectionExtractor",
+      "trigger": "extract",
+      "cve": "CVE-2020-2555",
+      "reachable_sink": "java.lang.reflect.Method.invoke",
+      "present_in_jar": true,
+      "decide_1411": "deny",
+      "decide_1511": "deny"
+    },
+    {
+      "class": "com.tangosol.util.extractor.UniversalExtractor",
+      "short": "UniversalExtractor",
+      "trigger": "extract",
+      "cve": "CVE-2020-2883 / CVE-2020-14756",
+      "reachable_sink": "java.lang.reflect.Method.invoke",
+      "present_in_jar": true,
+      "decide_1411": "unknown",
+      "decide_1511": "deny"
+    },
+    {
+      "class": "com.tangosol.util.extractor.ComparisonValueExtractor",
+      "short": "ComparisonValueExtractor",
+      "trigger": "extract",
+      "cve": "CVE-2020-2883",
+      "reachable_sink": null,
+      "present_in_jar": true,
+      "decide_1411": "unknown",
+      "decide_1511": "deny"
+    },
+    {
+      "class": "com.tangosol.util.extractor.ConditionalExtractor",
+      "short": "ConditionalExtractor",
+      "trigger": "extract",
+      "cve": "CVE-2020-14825",
+      "reachable_sink": null,
+      "present_in_jar": true,
+      "decide_1411": "unknown",
+      "decide_1511": "deny"
+    },
+    {
+      "class": "com.tangosol.util.extractor.ScriptValueExtractor",
+      "short": "ScriptValueExtractor",
+      "trigger": "extract",
+      "cve": "CVE-2021-2135",
+      "reachable_sink": null,
+      "present_in_jar": true,
+      "decide_1411": "unknown",
+      "decide_1511": "deny"
+    },
+    {
+      "class": "com.tangosol.util.extractor.UniversalUpdater",
+      "short": "UniversalUpdater",
+      "trigger": "update",
+      "cve": "CVE-2020-2883 family",
+      "reachable_sink": "java.lang.reflect.Method.invoke",
+      "present_in_jar": true,
+      "decide_1411": "unknown",
+      "decide_1511": "deny"
+    },
+    {
+      "class": "com.tangosol.util.extractor.ReflectionUpdater",
+      "short": "ReflectionUpdater",
+      "trigger": "update",
+      "cve": "CVE-2020-2883 family",
+      "reachable_sink": "java.lang.reflect.Method.invoke",
+      "present_in_jar": true,
+      "decide_1411": "unknown",
+      "decide_1511": "deny"
+    }
+  ],
+  "notes": [
+    "Verdicts are produced by tools.analysis.deserialization_filter.decide().",
+    "reachable_sink is read from the jar by scan_rules.inventory, the Stage-1 bytecode reader.",
+    "These are known, already-patched CVEs. This validates detection against ground truth; it is not a 0-day and does not demonstrate exploitation."
+  ]
+}

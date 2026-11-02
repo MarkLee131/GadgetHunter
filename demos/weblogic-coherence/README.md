@@ -4,6 +4,8 @@ A short narrated clip showing GadgetHunter's deserialization filter model reprod
 
 The rendered assets are in `media/`; `media/weblogic-coherence-demo.mp4` is the 1920x1080 clip (about 66 seconds, with a 3 second intro and 4 second outro card). The editable shot list and narration are in `scenario.json`.
 
+The homepage embeds this clip at `site/index.html#weblogic-demo`, alongside the workbench walkthrough. GitHub Pages publishes only `site/`, so the MP4, poster, WebVTT captions and transcript are mirrored into `site/media/`, and `evidence.json` into `site/evidence/weblogic-coherence.json`. After re-rendering, update these publication copies as well.
+
 ## What the clip shows
 
 The page evaluates each Coherence extractor class from a real WebLogic 14.1.1.0.0 GA `coherence.jar` against two default WebLogic serialization filters, the 14.1.1 GA filter and the current 15.1.1 filter. Two real GadgetHunter components produce every value on screen:
