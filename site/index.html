@@ -3,123 +3,327 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GadgetHunter — Java deserialization analysis</title>
-<meta name="description" content="Find and prioritize Java deserialization gadget chains in the software you ship. Inspect novelty, runtime mitigations and region-based feasibility evidence.">
-<link rel="stylesheet" href="styles.css">
-<script src="site.js" defer></script>
+<title>GadgetHunter</title>
+<meta name="description" content="GadgetHunter scans Java applications and libraries for deserialization gadget chains without handwritten taint configuration, then ranks new routes ahead of known public chains and routes your JDK already blocks.">
+<style>
+/* Design tokens: one accent, no gradients, one product shadow. */
+:root{
+  --primary:#0066cc;--primary-focus:#0071e3;--primary-on-dark:#2997ff;
+  --ink:#1d1d1f;--body-muted:#cccccc;--ink-muted-80:#333333;--ink-muted-48:#7a7a7a;
+  --divider-soft:#f0f0f0;--hairline:#e0e0e0;
+  --canvas:#ffffff;--parchment:#f5f5f7;--pearl:#fafafc;
+  --tile-1:#272729;--tile-2:#2a2a2c;--tile-3:#252527;--black:#000000;
+  --display:"SF Pro Display",system-ui,-apple-system,BlinkMacSystemFont,Inter,sans-serif;
+  --text:"SF Pro Text",system-ui,-apple-system,BlinkMacSystemFont,Inter,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --product-shadow:rgba(0,0,0,.22) 3px 5px 30px 0;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--canvas);color:var(--ink);font:400 17px/1.47 var(--text);letter-spacing:-.374px;-webkit-font-smoothing:antialiased}
+a{color:var(--primary);text-decoration:none}
+code{font-family:var(--mono);font-size:.88em;letter-spacing:0}
+:focus-visible{outline:2px solid var(--primary-focus);outline-offset:2px}
+
+/* Global nav: true black, 44px, 12px links */
+.global-nav{background:var(--black);height:44px}
+.global-nav .inner{max-width:1024px;height:44px;margin:0 auto;padding:0 22px;display:flex;align-items:center;justify-content:space-between}
+.global-nav a{color:#fff;font:400 12px/1 var(--text);letter-spacing:-.12px;opacity:.88}
+.global-nav .links{display:flex;gap:32px}
+.global-nav .wordmark{font-weight:600;opacity:1}
+
+
+/* Buttons: pill grammar, press = scale(.95) */
+.btn{display:inline-block;border-radius:9999px;padding:11px 22px;font:400 17px/1.17 var(--text);letter-spacing:-.374px;border:1px solid var(--primary);transition:transform .1s}
+.btn:active{transform:scale(.95)}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-secondary{background:transparent;color:var(--primary)}
+.dark .btn-secondary{color:var(--primary-on-dark);border-color:var(--primary-on-dark)}
+.ctas{display:flex;flex-wrap:wrap;justify-content:center;gap:17px;margin-top:32px}
+
+/* Full-bleed tiles: no radius, 80px, the colour change is the divider */
+.tile{padding:80px 22px;text-align:center}
+.tile.light{background:var(--canvas)}
+.tile.parchment{background:var(--parchment)}
+.tile.dark{background:var(--tile-1);color:#fff}
+.tile.dark-2{background:var(--tile-2);color:#fff}
+.tile.dark-3{background:var(--tile-3);color:#fff}
+.dark a{color:var(--primary-on-dark)}
+.narrow{max-width:980px;margin:0 auto}
+.wide{max-width:1200px;margin:0 auto}
+h1{font:600 56px/1.07 var(--display);letter-spacing:-.28px;margin:0}
+h2{font:600 40px/1.1 var(--display);letter-spacing:-.4px;margin:0}
+h3{font:600 21px/1.19 var(--display);letter-spacing:.231px;margin:0 0 8px}
+.lead{font:400 28px/1.14 var(--display);letter-spacing:.196px;margin:12px auto 0;max-width:820px}
+.lead-airy{font:300 24px/1.5 var(--text);letter-spacing:0;margin:20px auto 0;max-width:760px}
+.dark .lead,.dark .lead-airy,.dark-2 .lead,.dark-3 .lead{color:#fff}
+.muted{color:var(--ink-muted-80)}
+.dark .muted,.dark-2 .muted,.dark-3 .muted{color:var(--body-muted)}
+.caption{font:400 14px/1.43 var(--text);letter-spacing:-.224px}
+.fine{font:400 12px/1.33 var(--text);letter-spacing:-.12px;color:var(--ink-muted-48)}
+.dark .fine,.dark-2 .fine,.dark-3 .fine{color:var(--body-muted)}
+
+/* The product render: the single shadow in the system */
+.render{margin:56px auto 0;max-width:760px;text-align:left;border-radius:18px;box-shadow:var(--product-shadow);overflow:hidden}
+.render.terminal{background:var(--tile-3);color:#f5f5f7}
+.render.terminal pre{margin:0;padding:28px 32px;font:400 14px/1.7 var(--mono);letter-spacing:0;white-space:pre-wrap;word-break:break-word}
+.t-dim{color:var(--ink-muted-48)}
+.render.panel{background:var(--canvas);color:var(--ink)}
+.demo-player{max-width:1100px;margin:40px auto 0;background:#000;border-radius:18px;overflow:hidden;box-shadow:var(--product-shadow)}
+.demo-player video{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#000}
+.panel .head{display:flex;justify-content:space-between;gap:12px;padding:17px 24px;border-bottom:1px solid var(--hairline);font:600 14px/1.29 var(--text);letter-spacing:-.224px}
+.panel .head span:last-child{font-weight:400;color:var(--ink-muted-48)}
+.row{display:grid;grid-template-columns:56px 1fr;gap:12px;padding:17px 24px;border-bottom:1px solid var(--divider-soft)}
+.row:last-child{border-bottom:0}
+.row .rank{font:400 14px/1.43 var(--mono);letter-spacing:0;color:var(--ink-muted-48)}
+.row code{display:block;margin-top:8px;font-size:13px;line-height:1.6;color:var(--ink-muted-80);word-break:break-word}
+.row small{display:block;margin-top:4px;font:400 12px/1.4 var(--text);letter-spacing:-.12px;color:var(--ink-muted-48)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--hairline);border-radius:9999px;padding:3px 10px;font:400 12px/1.33 var(--text);letter-spacing:-.12px;color:var(--ink)}
+.chip.strong{font-weight:600}
+
+/* Text columns and utility cards */
+.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:48px;margin-top:56px;text-align:left}
+.cols.four{grid-template-columns:repeat(4,1fr);gap:32px}
+.cols p{margin:0}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:56px;text-align:left}
+.card{background:var(--parchment);border:1px solid var(--hairline);border-radius:18px;padding:24px}
+.card .step{font:600 17px/1.24 var(--text);letter-spacing:-.374px;color:var(--ink);display:block;margin-bottom:12px}
+.card p{margin:0;font:400 17px/1.47 var(--text)}
+.card code{font-size:13px;color:var(--ink-muted-80)}
+
+.triage-key{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;text-align:left;margin:24px 0 0}
+.triage-key dt{font-weight:600}
+.triage-key dd{margin:8px 0 0;color:var(--body-muted)}
+@media(max-width:640px){.triage-key{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Paper */
+.paper{max-width:820px;margin:56px auto 0;text-align:left}
+.paper-title{font:600 28px/1.14 var(--display);letter-spacing:.196px;margin:0 0 12px}
+.authors{margin:0 0 4px}
+.abstract{margin:24px 0 0}
+.bib{max-width:820px;margin:48px auto 0;text-align:left}
+
+/* Figures */
+.figures{display:grid;grid-template-columns:repeat(3,1fr);gap:48px;margin-top:56px;text-align:left}
+.figure strong{display:block;font:600 40px/1.1 var(--display);letter-spacing:-.4px}
+.figure p{margin:12px 0 0}
+
+/* Coverage table inside a utility card */
+.table-card{margin-top:56px;background:var(--canvas);border:1px solid var(--hairline);border-radius:18px;overflow:hidden;text-align:left}
+table{width:100%;border-collapse:collapse}
+th,td{padding:17px 24px;border-bottom:1px solid var(--divider-soft);vertical-align:top}
+th{font:600 14px/1.29 var(--text);letter-spacing:-.224px;color:var(--ink-muted-80);text-align:left}
+td{font:400 14px/1.43 var(--text);letter-spacing:-.224px}
+td:first-child{font:600 17px/1.24 var(--text);letter-spacing:-.374px;white-space:nowrap}
+td:first-child span{display:block;font:400 12px/1.33 var(--text);letter-spacing:-.12px;color:var(--ink-muted-48);margin-top:4px}
+tr:last-child td{border-bottom:0}
+td code{font-size:12.5px}
+
+/* Quick start: steps with code renders on dark */
+.steps{margin:56px auto 0;max-width:820px;text-align:left;display:grid;gap:48px}
+.steps>div{min-width:0}
+.steps p{margin:0 0 17px;color:var(--body-muted)}
+.code{position:relative;background:var(--tile-1);border-radius:18px}
+.code pre{margin:0;padding:24px 28px;overflow-x:auto;font:400 14px/1.7 var(--mono);letter-spacing:0;color:#f5f5f7;white-space:pre}
+.copy{position:absolute;top:12px;right:12px;background:var(--pearl);color:var(--ink-muted-80);border:3px solid var(--divider-soft);border-radius:11px;padding:6px 14px;font:400 14px/1.29 var(--text);letter-spacing:-.224px;cursor:pointer;transition:transform .1s}
+.copy:active{transform:scale(.95)}
+
+/* Footer: parchment, dense links */
+footer{background:var(--parchment);color:var(--ink-muted-80);padding:64px 22px}
+footer .inner{max-width:980px;margin:0 auto}
+.foot-links{display:flex;flex-wrap:wrap;gap:24px;padding-bottom:32px;border-bottom:1px solid var(--hairline)}
+.foot-links a{color:var(--ink-muted-80);font:400 17px/1.5 var(--text);letter-spacing:0}
+.legal{padding-top:24px;font:400 12px/1.6 var(--text);letter-spacing:-.12px;color:var(--ink-muted-48)}
+
+/* Responsive ladder from the design system */
+@media(max-width:1068px){h1{font-size:40px;line-height:1.1}.cards{grid-template-columns:repeat(2,1fr)}.cols.four{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:833px){.global-nav .links a:not(.keep){display:none}.cols,.figures{grid-template-columns:1fr;gap:32px}.lead{font-size:24px}}
+@media(max-width:640px){h1{font-size:34px}h2{font-size:32px}.cards,.cols.four{grid-template-columns:1fr}.render.terminal pre{font-size:12px;padding:20px}.lead{font-size:21px}}
+@media(max-width:419px){h1{font-size:28px}.tile{padding:48px 17px}}
+</style>
 </head>
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header wrap">
-  <a class="wordmark" href="#main" aria-label="GadgetHunter home"><svg width="29" height="30" viewBox="0 0 29 30" fill="none" aria-hidden="true"><path d="M6 6v18h17V6H6Zm0 0 17 18" stroke="currentColor" stroke-width="1.5"/><path d="M2 2h8v8H2zM19 20h8v8h-8z" fill="currentColor"/></svg>GadgetHunter</a>
-  <nav aria-label="Main navigation"><a href="#triage">Triage</a><a href="#demo">Demos</a><a href="#paper">Research</a><a href="https://github.com/MarkLee131/GadgetHunter/tree/modern-scanning">GitHub <span aria-hidden="true">↗</span></a></nav>
-</header>
-<main id="main">
-<section class="hero wrap" aria-labelledby="hero-title">
-  <div class="hero-copy">
-    <p class="eyebrow">Java deserialization analysis</p>
-    <h1 id="hero-title">Find gadget chains that still work in the software you actually ship.</h1>
-    <p class="intro">Scan your archives. Separate new routes from known families and blocked paths. Spend your analysis on the chains worth reviewing.</p>
-    <a class="button" href="#start">Analyze your application <span aria-hidden="true">→</span></a>
-    <p class="hero-note">Local candidate search and triage.<br>LLM + Z3 analysis when you choose.</p>
+
+<nav class="global-nav" aria-label="Global"><div class="inner">
+  <a class="wordmark keep" href="#">GadgetHunter</a>
+  <div class="links">
+    <a class="keep" href="#paper">Paper</a>
+    <a class="keep" href="https://github.com/MarkLee131/GadgetHunter/tree/modern-scanning">GitHub</a>
   </div>
-  <figure class="scan-panel">
-    <figcaption><span class="panel-label">Recorded scan</span><span class="status partial">Partial coverage</span></figcaption>
-    <div class="scan-target"><strong>static-analysis-fixture.jar</strong><span>Corretto 8 / 1.8.0_432</span></div>
-    <dl class="scan-counts"><div><dt>Candidates</dt><dd>2,729</dd></div><div><dt>Review clusters</dt><dd>512</dd></div><div><dt>Blocked candidates</dt><dd>1,571</dd></div></dl>
-    <div class="scan-selection"><div class="selection-heading"><span>Review #1</span><span class="status novel">Novel</span></div>
-      <ol class="trace"><li><span class="trace-label">Source</span><code>EffectProbe.readResolve</code></li><li><span class="trace-label">Sink</span><code>Runtime.exec</code></li></ol>
-      <dl class="scan-fields"><div><dt>Effect</dt><dd>Process execution</dd></div><div><dt>Feasibility</dt><dd>Not analyzed</dd></div></dl>
+</div></nav>
+
+
+<main>
+<section class="tile light">
+  <div class="narrow">
+    <h1>Hunt new gadget chains.</h1>
+    <p class="lead">Not the ones your JDK already killed.</p>
+    <p class="lead-airy muted">Point GadgetHunter at a JAR, Spring Boot fat JAR or WAR. It derives taint rules from the bytecode, searches for deserialization chains, and ranks genuinely new routes ahead of chains you already know and ones your build already blocks.</p>
+    <div class="ctas"><a class="btn btn-primary" href="#start">Get started</a><a class="btn btn-secondary" href="#demo">Watch demo</a><a class="btn btn-secondary" href="https://github.com/MarkLee131/GadgetHunter/tree/modern-scanning">View on GitHub</a></div>
+  </div>
+  <div class="render terminal" aria-label="Example scan output">
+<pre><span class="t-dim">$</span> python scan_candidates.py \
+    --app commons-collections-3.2.1.jar \
+    --java-home $JDK --output scans/cc321 \
+    --profile native-core --profile modern-effects \
+    --collector fair --timeout 240
+<span class="t-dim">Preparing target classpath and rules…</span>
+partial: time limit reached, complete chains kept.
+Labeled novel, known, blocked or constrained; clustered.
+Review first: scans/cc321/chains.review</pre>
+  </div>
+</section>
+
+<section class="tile parchment" id="demo" aria-labelledby="demo-heading">
+  <div class="wide">
+    <h2 id="demo-heading">See the workflow.</h2>
+    <p class="lead">From archive to reviewable evidence.</p>
+    <div class="demo-player">
+      <video controls playsinline preload="metadata" poster="media/gadgethunter-demo-poster.jpg?v=academic-narration-20261102" aria-label="GadgetHunter workbench demonstration">
+        <source src="media/gadgethunter-demo.mp4?v=academic-narration-20261102" type="video/mp4">
+        <track kind="captions" src="media/gadgethunter-demo.en.vtt?v=academic-narration-20261102" srclang="en" label="English">
+        <p><a href="media/gadgethunter-demo.mp4">Download the GadgetHunter demo video.</a></p>
+      </video>
     </div>
-    <p class="panel-foot">Actual fixture output, not a confirmed vulnerability.<br><a href="evidence/triage-example.json">Inspect the recorded evidence <span aria-hidden="true">↗</span></a></p>
-  </figure>
+  </div>
 </section>
 
-<section class="section wrap" id="triage" aria-labelledby="triage-heading">
-  <div class="section-heading"><p class="eyebrow">01 / Decide what deserves review</p><h2 id="triage-heading">A candidate is a starting point.</h2><p>Thousands of paths do not mean thousands of vulnerabilities. Triage keeps every candidate, groups equivalent routes, and puts new routes through your target first.</p></div>
-  <div class="review-workspace">
-    <div class="workspace-bar"><strong>Inspect a candidate</strong><span>Selected examples from the recorded scan</span></div>
-    <div class="review-grid">
-      <div class="chain-list" role="group" aria-label="Select a recorded candidate">
-        <button class="chain-row selected" type="button" data-chain="1" aria-pressed="true" aria-controls="candidate-evidence"><span class="chain-meta"><span class="rank">#1</span><span class="status novel">Novel</span></span><strong>Process execution</strong><code>EffectProbe → Runtime</code><span class="chain-context">Target code</span></button>
-        <button class="chain-row" type="button" data-chain="0" aria-pressed="false" aria-controls="candidate-evidence"><span class="chain-meta"><span class="rank">#2</span><span class="status novel">Novel</span></span><strong>Secondary deserialization</strong><code>NestedProbe → ObjectInputStream</code><span class="chain-context">Target code</span></button>
-        <button class="chain-row" type="button" data-chain="2396" aria-pressed="false" aria-controls="candidate-evidence"><span class="chain-meta"><span class="rank">#17</span><span class="status known">Known</span></span><strong>Outbound request</strong><code>AnnotationInvocationHandler → URL</code><span class="chain-context">JRMP client family</span></button>
-        <button class="chain-row" type="button" data-chain="495" aria-pressed="false" aria-controls="candidate-evidence"><span class="chain-meta"><span class="rank">#1159</span><span class="status novel">Novel</span><span class="status blocked">Blocked</span></span><strong>Class definition</strong><code>ProxyRef → URLClassLoader</code><span class="chain-context">Runtime mitigation found</span></button>
-      </div>
-      <p class="sr-only" id="candidate-status" role="status" aria-live="polite" aria-atomic="true"></p>
-      <div class="candidate-evidence" id="candidate-evidence" aria-labelledby="evidence-title">
-        <div class="evidence-heading"><p class="eyebrow" id="evidence-rank">Review #1</p><span class="effect-tag" id="evidence-effect">Process execution</span></div>
-        <h3 id="evidence-title">A new route through target code.</h3>
-        <ol class="trace evidence-trace"><li><span class="trace-label">Source</span><code id="evidence-entry">fixtures.EffectProbe.readResolve</code></li><li class="trace-gap" id="evidence-gap" hidden></li><li><span class="trace-label">Sink</span><code id="evidence-sink">java.lang.Runtime.exec</code></li></ol>
-        <dl class="evidence-fields"><div><dt>Novelty</dt><dd id="evidence-novelty">Novel</dd></div><div><dt>Mitigation</dt><dd id="evidence-mitigation">None flagged</dd></div><div><dt>Feasibility</dt><dd>Not analyzed</dd></div></dl>
-        <p class="finding" id="evidence-finding">No catalogued family matched. This is a deliberate test fixture; the label is a review signal, not a new vulnerability claim.</p>
-        <details class="raw-trace"><summary>Inspect the emitted trace</summary><pre id="evidence-trace">[VIRTUAL] &lt;fixtures.EffectProbe: java.lang.Object readResolve()&gt; --(line:9, constraint:[-3, -1])--&gt; &lt;java.lang.Runtime: java.lang.Process exec(java.lang.String)&gt;</pre></details>
-      </div>
+<section class="tile parchment" id="weblogic-demo" aria-labelledby="weblogic-demo-heading">
+  <div class="wide">
+    <h2 id="weblogic-demo-heading">WebLogic case study.</h2>
+    <p class="lead">Coherence gadgets across two WebLogic builds.</p>
+    <div class="demo-player">
+      <video controls playsinline preload="metadata" poster="media/weblogic-coherence-demo-poster.jpg" aria-label="WebLogic Coherence case study">
+        <source src="media/weblogic-coherence-demo.mp4" type="video/mp4">
+        <track kind="captions" src="media/weblogic-coherence-demo.en.vtt" srclang="en" label="English">
+        <p><a href="media/weblogic-coherence-demo.mp4">Download the WebLogic demo video.</a></p>
+      </video>
     </div>
-    <div class="workspace-foot"><span>90-second search budget. Partial coverage. Ranks retained from the full result.</span><a href="https://github.com/MarkLee131/GadgetHunter/blob/modern-scanning/demos/workbench/README.md">Run provenance ↗</a></div>
-  </div>
-  <dl class="triage-legend"><div><dt><span class="status novel">Novel</span></dt><dd>No catalogued family matched.</dd></div><div><dt><span class="status known">Known</span></dt><dd>Matches a public gadget family.</dd></div><div><dt><span class="status blocked">Blocked</span></dt><dd>A mitigation blocks the route.</dd></div><div><dt><span class="status constrained">Constrained</span></dt><dd>Additional conditions need review. No example in this recorded run.</dd></div></dl>
-  <p class="fine">Novelty and mitigation are independent: a route can be both novel and blocked. Neither classification is a solver verdict.</p>
-</section>
-
-<section class="section pipeline-section" id="how" aria-labelledby="how-heading"><div class="wrap">
-  <div class="section-heading"><p class="eyebrow">02 / Follow the evidence</p><h2 id="how-heading">From archive to a reasoned verdict.</h2><p>Prepare, search and triage locally. Choose representatives and provide matching Java sources for region-based analysis.</p></div>
-  <ol class="pipeline">
-    <li><span class="node-number">01</span><span class="execution">Local</span><h3>Prepare archives</h3><p>JAR, WAR or Spring Boot archive</p><span class="node-output">Classpath + derived taint rules</span></li>
-    <li><span class="node-number">02</span><span class="execution">Local</span><h3>Search candidates</h3><p>Static taint analysis</p><span class="node-output">Source-to-sink paths</span></li>
-    <li><span class="node-number">03</span><span class="execution">Local</span><h3>Triage routes</h3><p>Novelty, effects and mitigations</p><span class="node-output">Ranked cluster representatives</span></li>
-    <li class="analysis-node"><span class="node-number">04</span><span class="execution">LLM + Z3</span><h3>Analyze regions</h3><p>Semantic reachability + constraints</p><span class="node-output">Feasibility + supporting evidence</span></li>
-  </ol>
-  <p class="pipeline-note"><span class="region-boundary" aria-hidden="true">↳</span> The final stage uses an LLM for dynamic boundaries and constraint extraction, then Z3 to check the extracted model. Satisfiable constraints do not establish exploitability.</p>
-  <p class="fine" id="coverage">Effects include process execution, class definition, expression evaluation, JNDI, JDBC, secondary deserialization, file operations and outbound requests. <a href="https://github.com/MarkLee131/GadgetHunter/blob/modern-scanning/docs/usage.md#automatic-taint-configuration">Inspect effect coverage ↗</a></p>
-</div></section>
-
-<section class="section wrap" id="demo" aria-labelledby="demo-heading">
-  <div class="section-heading"><p class="eyebrow">03 / Watch the analysis</p><h2 id="demo-heading">Two views of GadgetHunter at work.</h2></div>
-  <div class="demo-grid">
-    <figure class="demo" id="workbench-demo"><figcaption><span class="demo-number">01</span><h3>Workbench walkthrough</h3><p>Upload an archive, review candidates and inspect analysis evidence.</p></figcaption>
-      <video controls playsinline preload="none" poster="media/gadgethunter-demo-poster.jpg?v=academic-narration-20261102" aria-label="Workbench walkthrough"><source src="media/gadgethunter-demo.mp4?v=academic-narration-20261102" type="video/mp4"><track kind="captions" src="media/gadgethunter-demo.en.vtt?v=academic-narration-20261102" srclang="en" label="English"><p><a href="media/gadgethunter-demo.mp4">Download the workbench video</a></p></video>
-      <p class="demo-scope">Recorded fixture scan, followed by a separate saved benign analysis report. No live model run is shown.</p><div class="demo-links"><a href="media/gadgethunter-demo-transcript.txt">Transcript</a><a href="https://github.com/MarkLee131/GadgetHunter/blob/modern-scanning/demos/workbench/README.md">Recording details ↗</a></div>
-    </figure>
-    <figure class="demo" id="weblogic-demo"><figcaption><span class="demo-number">02</span><h3>WebLogic case study</h3><p>Compare Coherence gadgets against the default filters in two WebLogic builds.</p></figcaption>
-      <video controls playsinline preload="none" poster="media/weblogic-coherence-demo-poster.jpg" aria-label="WebLogic Coherence case study"><source src="media/weblogic-coherence-demo.mp4" type="video/mp4"><track kind="captions" src="media/weblogic-coherence-demo.en.vtt" srclang="en" label="English"><p><a href="media/weblogic-coherence-demo.mp4">Download the WebLogic video</a></p></video>
-      <p class="demo-scope">WebLogic 14.1.1 GA vs. 15.1.1. Known CVE filter decisions and reachable sinks; no exploit payload is executed.</p><div class="demo-links"><a href="media/weblogic-coherence-demo-transcript.txt">Transcript</a><a href="evidence/weblogic-coherence.json">Case evidence ↗</a></div>
-    </figure>
+    <p class="caption muted" style="margin-top:24px">WebLogic 14.1.1 GA and 15.1.1. Known CVE filter decisions and reachable sinks; no exploit payload is executed.</p>
+    <p class="caption" style="margin-top:12px"><a href="media/weblogic-coherence-demo-transcript.txt">Read the transcript</a></p>
   </div>
 </section>
 
-<section class="section research-section" id="paper" aria-labelledby="paper-heading"><div class="wrap research-grid">
-  <div><p class="eyebrow">04 / Research evidence</p><h2 id="paper-heading">Claims you can trace.</h2><p class="paper-title">GadgetHunter: Region-Based Neuro-symbolic Detection of Java Deserialization Vulnerabilities</p><p class="fine">Kaixuan Li, Jian Zhang, Chong Wang, Sen Chen, Zong Cao, Min Zhang, Yang Liu</p><p class="fine">FSE 2026<br>Proc. ACM Softw. Eng. 3, FSE003</p><div class="text-links"><a href="https://github.com/MarkLee131/GadgetHunter/blob/modern-scanning/paper/kaixuan-FSE26_GadgetHunter.pdf">Read the paper ↗</a><a href="https://doi.org/10.1145/3797065">ACM Digital Library ↗</a></div></div>
-  <div class="benchmark"><table><caption>Reported evaluation of the research system</caption><thead><tr><th scope="col">Measure</th><th scope="col">Paper result</th><th scope="col">Evidence</th></tr></thead><tbody>
-    <tr><th scope="row">False negative rate</th><td>↓ up to 32%</td><td>§5.2.1 / Fig. 5</td></tr>
-    <tr><th scope="row">False positive rate</th><td>↓ 12–85%</td><td>§5.2.1 / Fig. 5</td></tr>
-    <tr><th scope="row">Previously unknown chains</th><td>197</td><td>§5.2.1 / Fig. 5</td></tr>
-    <tr><th scope="row">Recent CVEs rediscovered</th><td>4</td><td>Table 6</td></tr>
-  </tbody></table><p class="fine">Error-rate improvements compare against the paper’s SOTA baselines on ysoserial. CVE results use the separate real-world evaluation. These are original paper results, not a rerun of the current scanning pipeline.</p><a class="small-link" href="https://github.com/MarkLee131/GadgetHunter/blob/modern-scanning/docs/research.md">Experiment settings and limitations ↗</a></div>
-</div></section>
-
-<section class="section wrap" aria-labelledby="evolution-heading">
-  <p class="eyebrow">05 / Research into practice</p><h2 id="evolution-heading">One foundation. An evolving tool.</h2>
-  <div class="evolution"><div><p class="era">FSE 2026 research</p><h3>Region-based reasoning</h3><p>Static taint analysis finds candidates. LLM reasoning crosses dynamic boundaries. Composed constraints let an SMT solver assess path feasibility.</p><a href="https://github.com/MarkLee131/GadgetHunter/tree/main">Explore the paper artifact ↗</a></div><span class="evolution-arrow" aria-hidden="true">→</span><div><p class="era">Current engineering</p><h3>Review the software you ship</h3><p>Archive scanning, automatic taint configuration, JDK-aware triage, novelty ranking and a local workbench bring that analysis into a review workflow.</p><a href="https://github.com/MarkLee131/GadgetHunter/tree/modern-scanning">Explore the current tool ↗</a></div></div>
+<section class="tile dark">
+  <div class="wide">
+    <h2>Built for people who report 0days.</h2>
+    <p class="lead">Finding thousands of paths is easy. Deciding which ten deserve your evening is the work.</p>
+    <div class="cols">
+      <div><h3>No handwritten taint config.</h3><p class="muted">Callback roots, sinks, propagation and safe ignores are derived from your classpath. Gaps are reported, not guessed.</p></div>
+      <div><h3>Novel, known or dead.</h3><p class="muted">Every candidate is labeled against known gadget families and checked for mitigations in the scanned bytecode, so backports and shaded copies are judged by what they actually do.</p></div>
+      <div><h3>Real deliverables in.</h3><p class="muted">Spring Boot fat JARs and WARs are split into application and library classes. Anything the target runtime can't load is dropped and listed, so you know what was not scanned.</p></div>
+    </div>
+  </div>
 </section>
 
-<section class="section start-section" id="start" aria-labelledby="start-heading"><div class="wrap">
-  <div class="section-heading"><p class="eyebrow">06 / Run it on your target</p><h2 id="start-heading">Start with an archive.</h2><p>Python 3.10+ and JDK 17+ on <code>PATH</code>. Point the scanner at a JDK matching your target. An API key is only needed for the optional analysis stage.</p></div>
-  <ol class="quick-start">
-    <li><div><h3>Install</h3><p>Clone the current scanning branch and install its Python dependencies.</p></div><div class="command"><button class="copy" type="button" aria-label="Copy install commands">Copy</button><pre>git clone -b modern-scanning https://github.com/MarkLee131/GadgetHunter && cd GadgetHunter
+<section class="tile parchment" id="paper">
+  <div class="wide">
+    <h2>Built on peer-reviewed research.</h2>
+    <p class="lead">Published at FSE 2026.</p>
+    <div class="paper">
+      <p class="paper-title">GadgetHunter: Region-Based Neuro-symbolic Detection of Java Deserialization Vulnerabilities</p>
+      <p class="authors"><a href="https://kaixuanli-ecnu.github.io/">Kaixuan Li</a>, Jian Zhang, Chong Wang, Sen Chen, Zong Cao, Min Zhang, Yang Liu</p>
+      <p class="fine">Proc. ACM Softw. Eng. 3, FSE, Article FSE003 (July 2026)</p>
+      <p class="muted abstract">GadgetHunter splits each gadget chain into regions by analyzability: statically resolvable segments go through interprocedural taint analysis, dynamic boundaries are checked by an LLM, and each gadget's constraints are composed into SMT formulas that decide feasibility.</p>
+    </div>
+    <div class="figures">
+      <div class="figure"><strong>Up to 32%</strong><p class="muted">fewer false negatives than state-of-the-art tools on the ysoserial benchmark.</p></div>
+      <div class="figure"><strong>12 to 85%</strong><p class="muted">fewer false positives than the same tools, from symbolic feasibility checks.</p></div>
+      <div class="figure"><strong>197</strong><p class="muted">previously unknown gadget chains discovered, and 4 recent CVEs rediscovered.</p></div>
+    </div>
+    <div class="ctas"><a class="btn btn-primary" href="https://github.com/MarkLee131/GadgetHunter/blob/modern-scanning/paper/kaixuan-FSE26_GadgetHunter.pdf">Read the paper</a><a class="btn btn-secondary" href="https://doi.org/10.1145/3797065">ACM Digital Library</a></div>
+  </div>
+</section>
+
+<section class="tile light" id="how">
+  <div class="wide">
+    <h2>Four stages. Three need no model.</h2>
+    <p class="lead">Your bytecode stays on your machine until you choose chains to analyze.</p>
+    <div class="cards">
+      <div class="card"><span class="step">Prepare archives</span><p>Normalize archives, index classes without loading them, and emit exact callback roots with validated sink and transfer rules.</p></div>
+      <div class="card"><span class="step">Find candidates</span><p>Bounded taint search from protocol callbacks to effect boundaries. A timeout keeps complete chains and reports <code>partial</code>.</p></div>
+      <div class="card"><span class="step">Prioritize review</span><p>Label novelty, effect and mitigations, cluster equivalent routes, and write a ranked review list. Nothing is deleted.</p></div>
+      <div class="card"><span class="step">Analyze chains</span><p>Region-based LLM reachability and constraint extraction, solved with Z3, for the representatives you pick.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="tile dark-2" id="triage">
+  <div class="narrow">
+    <h2>Triage that knows the ecosystem moved on.</h2>
+    <p class="lead">GadgetHunter scans the exact JDK and library versions you ship, Java 8, 11, 17 or newer, and triages against what that build actually blocks.</p>
+    <p class="lead-airy muted">The run below is one Java 8 target; older chains stay visible, ranked where they belong.</p>
+  </div>
+  <div class="render panel" aria-label="Example review priority">
+    <div class="head"><span>Review priority</span><span>Corretto 1.8.0_432</span></div>
+    <div class="row"><span class="rank">#1</span><div><div class="chips"><span class="chip strong">novel</span><span class="chip">expression-evaluation</span></div><code>Main.readObject → Expression.getValue</code><small>A SpEL route through application code</small></div></div>
+    <div class="row"><span class="rank">#2</span><div><div class="chips"><span class="chip strong">novel</span><span class="chip">file-delete</span></div><code>MultiHashMap.readObject → ServiceLoader$LazyIterator.hasNext → AccessController.doPrivileged → FileFont$CreatedFontFileDisposerRecord$1.run → File.delete</code></div></div>
+    <div class="row"><span class="rank">#3</span><div><div class="chips"><span class="chip strong">known</span><span class="chip">secondary-deserialization</span><span class="chip">jdk-jrmp-client</span></div><code>Main.readObject → RemoteObjectInvocationHandler.invoke → … → UnicastRef.unmarshalValue → ObjectInput.readObject</code></div></div>
+    <div class="row"><span class="rank">#4</span><div><div class="chips"><span class="chip strong">blocked</span><span class="chip">process-execution</span></div><code>Main.readObject → AnnotationInvocationHandler.invoke → UIDefaults$TextAndMnemonicHashMap.get → … → Runtime.exec</code><small>readObject rebuilds memberValues as a fresh LinkedHashMap (JDK 8u71+)</small></div></div>
+  </div>
+  <div class="narrow">
+    <dl class="triage-key caption">
+      <div><dt>Novel</dt><dd>No known family's core gadget</dd></div>
+      <div><dt>Known</dt><dd>A public family</dd></div>
+      <div><dt>Blocked</dt><dd>Dead in the scanned bytecode</dd></div>
+      <div><dt>Constrained</dt><dd>Needs more than the chain</dd></div>
+    </dl>
+  </div>
+</section>
+
+
+<section class="tile parchment" id="coverage">
+  <div class="narrow">
+    <h2>Effect coverage without a YAML file.</h2>
+    <p class="lead">Sinks are chosen from your bytecode, not a handwritten config.</p>
+    <p class="lead-airy muted">Process execution, class definition, expression evaluation, JNDI, JDBC, secondary deserialization, reflection, file write and outbound request, each ranked by priority. Full signatures are in the <a href="https://github.com/MarkLee131/GadgetHunter/blob/modern-scanning/docs/usage.md#automatic-taint-configuration">usage guide</a>.</p>
+  </div>
+</section>
+
+<section class="tile dark-3" id="start">
+  <div class="narrow">
+    <h2>Get started.</h2>
+    <p class="lead">Python 3.10+ and a JDK 17+ on <code>PATH</code> to run the analysis.</p>
+    <p class="lead-airy muted">Point <code>--java-home</code> at a JDK matching your target, Java 8, 11, 17 or newer, so you scan the version you actually ship. No API key until the optional analysis stage.</p>
+  </div>
+  <div class="steps">
+    <div><h3>Install.</h3>
+      <div class="code"><button class="copy" type="button">Copy</button><pre>git clone -b modern-scanning https://github.com/MarkLee131/GadgetHunter && cd GadgetHunter
 python3 -m venv .venv && source .venv/bin/activate
-python -m pip install -r requirements.txt</pre></div></li>
-    <li><div><h3>Scan</h3><p>JARs, fat JARs and WARs work here. Add <code>--lib</code> for unbundled dependencies.</p></div><div class="command"><button class="copy" type="button" aria-label="Copy scan command">Copy</button><pre>python scan_candidates.py --app /path/service.jar \
+python -m pip install -r requirements.txt</pre></div></div>
+    <div><h3>Scan a deliverable.</h3><p>Fat JARs and WARs are expanded automatically. Add <code>--lib</code> for dependencies that aren't bundled. Start with <code>chains.review</code>: one representative per cluster, in priority order, with every label explained in <code>triage.json</code>.</p>
+      <div class="code"><button class="copy" type="button">Copy</button><pre>python scan_candidates.py --app /path/service.jar \
   --java-home /path/to/target-jdk --output scans/service \
-  --collector fair --timeout 600 --heap-mb 6144</pre></div></li>
-    <li><div><h3>Analyze</h3><p>Set <code>OPENAI_API_KEY</code>, supply matching Java sources and start with one representative.</p></div><div class="command"><button class="copy" type="button" aria-label="Copy analysis command">Copy</button><pre>cd multi-agents
+  --collector fair --timeout 600 --heap-mb 6144</pre></div></div>
+    <div><h3>Analyze the best candidates.</h3><p>Give the LLM and Z3 stage the review list instead of every candidate, so cost goes where new findings are likely.</p>
+      <div class="code"><button class="copy" type="button">Copy</button><pre>cd multi-agents && export OPENAI_API_KEY=...
 python main.py --chains-file ../scans/service/chains.review \
-  --project-root /path/to/sources --chain-index 0</pre></div></li>
-  </ol>
-  <details class="workbench-start"><summary>Prefer the browser workbench?</summary><p>Run from the repository root, then open <a href="http://127.0.0.1:8765">localhost:8765</a>.</p><div class="command"><button class="copy" type="button" aria-label="Copy workbench command">Copy</button><pre>python workbench.py --java-home /path/to/target-jdk --collector fair</pre></div></details>
-  <p class="copy-feedback" id="copy-feedback" role="status"></p>
-</div></section>
+  --project-root /path/to/sources --batch --max-chains 50</pre></div></div>
+    <div><h3>Or use the browser workbench.</h3><p>Upload archives, pick effect coverage, watch progress, and send ranked representatives to analysis. Everything runs on localhost.</p>
+      <div class="code"><button class="copy" type="button">Copy</button><pre>python workbench.py --java-home /path/to/target-jdk --collector fair
+# open http://127.0.0.1:8765</pre></div></div>
+  </div>
+</section>
+
 </main>
-<footer class="wrap"><a class="wordmark" href="#main">GadgetHunter</a><nav aria-label="Resources"><a href="#paper">Paper</a><a href="https://github.com/MarkLee131/GadgetHunter/tree/modern-scanning">GitHub</a><a href="https://github.com/MarkLee131/GadgetHunter/blob/modern-scanning/docs/usage.md">Documentation</a><a href="https://github.com/MarkLee131/GadgetHunter/blob/modern-scanning/LICENSE">License</a></nav><p>Candidate chains are analysis leads, not verified vulnerabilities.</p><p class="fine">Apache 2.0, except the LGPL backend helper and collector adapter.</p></footer>
+
+<footer><div class="inner">
+  <div class="foot-links">
+    <a href="https://github.com/MarkLee131/GadgetHunter/tree/modern-scanning">GitHub</a>
+    <a href="https://github.com/MarkLee131/GadgetHunter/blob/modern-scanning/docs/usage.md">Usage guide</a>
+    <a href="https://github.com/MarkLee131/GadgetHunter/blob/modern-scanning/LICENSE">License</a>
+    <a href="https://github.com/MarkLee131/GadgetHunter/tree/main">Paper artifact</a>
+  </div>
+  <p class="legal">GadgetHunter is licensed under Apache 2.0, except the LGPL backend helper and collector adapter. Candidate chains are static-analysis leads, not verified vulnerabilities.</p>
+</div></footer>
+
+<script>
+document.querySelectorAll('.copy').forEach(button=>button.addEventListener('click',async()=>{
+  try{await navigator.clipboard.writeText(button.nextElementSibling.textContent);button.textContent='Copied';}
+  catch{button.textContent='Select to copy';}
+  setTimeout(()=>button.textContent='Copy',1500);
+}));
+</script>
 </body>
 </html>
