@@ -6,7 +6,7 @@
 <title>GadgetHunter</title>
 <meta name="description" content="GadgetHunter scans Java applications and libraries for deserialization gadget chains without handwritten taint configuration, then ranks new routes ahead of known public chains and routes your JDK already blocks.">
 <style>
-/* Tokens follow DESIGN-apple.md. One accent, no gradients, one product shadow. */
+/* Design tokens: one accent, no gradients, one product shadow. */
 :root{
   --primary:#0066cc;--primary-focus:#0071e3;--primary-on-dark:#2997ff;
   --ink:#1d1d1f;--body-muted:#cccccc;--ink-muted-80:#333333;--ink-muted-48:#7a7a7a;
@@ -236,8 +236,8 @@ Review first: scans/cc321/chains.review</pre>
 <section class="tile dark-2" id="triage">
   <div class="narrow">
     <h2>Triage that knows the ecosystem moved on.</h2>
-    <p class="lead">Real targets run JDK 8u400 and Commons Collections 3.2.2.</p>
-    <p class="lead-airy muted">Older chains stay visible, ranked where they belong.</p>
+    <p class="lead">GadgetHunter scans the exact JDK and library versions you ship, Java 8, 11, 17 or newer, and triages against what that build actually blocks.</p>
+    <p class="lead-airy muted">The run below is one Java 8 target; older chains stay visible, ranked where they belong.</p>
   </div>
   <div class="render panel" aria-label="Example review priority">
     <div class="head"><span>Review priority</span><span>Corretto 1.8.0_432</span></div>

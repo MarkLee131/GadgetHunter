@@ -91,7 +91,7 @@ From the repository root, with Python dependencies installed:
 python prepare_scan.py \
   --app /absolute/path/application.jar \
   --lib /absolute/path/dependency.jar \
-  --java8-home /absolute/path/to/target-jdk8 \
+  --java-home /absolute/path/to/target-jdk \
   --output .gadgethunter/prepared/application
 ```
 
